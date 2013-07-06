@@ -20,11 +20,13 @@
 #include <iomanip>
 
 
+#if 0
 #define IsInvalid(Matrix) {\
     if(Matrix.m_data==NULL\
         ||Matrix.m_row==0\
         ||Matrix.m_column==0)\
         return RET_INVALIDE;}
+#endif /* Modify by Amos.zhu */
 
 typedef enum ERROR_TYPE
 {
@@ -47,7 +49,7 @@ class CMatrix
 {
 public:
     CMatrix(void);
-    CMatrix(int m,int n);
+    CMatrix(int m,int n,type* table=NULL);
     CMatrix(const CMatrix<type>& otherMatrix);
     ~CMatrix(void);
 
@@ -59,7 +61,8 @@ public: //Matrix operations
     type DetValue(void);
     Err_t SetValue(int m,int n);
 #endif /* Modify by Amos.zhu */
-    Err_t Elimination(const CMatrix<type>& Matrix_A,CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U);
+    Err_t Elimination(CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U);
+    Err_t Cofactor(CMatrix<type>& matrix_co,int m,int n);
 
 
     CMatrix<type>& operator=(const CMatrix<type>& otherMatrix);
@@ -76,7 +79,7 @@ public:
     void Destroy(void);
     Err_t ShowMatrix(void);
     static void SetDbgLVL(DEBUG_T level);
-    //inline Err_t IsIvalid(const CMatrix<type>& Matrix);
+    inline Err_t IsInvalid(const CMatrix<type>& Matrix);
 
 private:
     type* m_data;
@@ -93,8 +96,7 @@ private://Function
 
 public: //friend function
     template<typename type> friend std::ostream& operator<<(std::ostream& output,const CMatrix<type>& matrix);
-
-
+    template<typename type> friend CMatrix<type>& operator*(type val,const CMatrix<type>& otherMatrix);
 
 };
 
@@ -111,16 +113,33 @@ CMatrix<type>::CMatrix(void)
 }
 
 template<typename type>
-CMatrix<type>::CMatrix(int m,int n)
+CMatrix<type>::CMatrix(int m,int n,type* table)
 {
     if(m==0||n==0)
-        std::cout<<"Invalide columns or row!"<<std::endl;
+    {
+        if(DBG_LVL>=DBG_ERROR)
+        {
+            std::cout<<"Invalide columns or row!"<<std::endl;
+        }
+        m_row=0;
+        m_column=0;
+        memset(m_data,0,(sizeof(type)*m_column*m_row));
+        return;
+    }
 
     m_row=m;
     m_column=n;
 
     m_data=new type[m_column*m_row];
-    memset(m_data,0,(sizeof(type)*m_column*m_row));
+
+    if(table==NULL)
+    {
+        memset(m_data,0,(sizeof(type)*m_column*m_row));
+        return;
+    }
+
+    memcpy(m_data,table,sizeof(type)*m_column*m_row);
+
     return;
 }
 
@@ -150,17 +169,19 @@ CMatrix<type>::~CMatrix(void)
     Destroy();
 }
 
-#if 0
 template<typename type>
-inline Err_t CMatrix<type>::IsIvalid(const CMatrix<type>& Matrix)
+inline Err_t CMatrix<type>::IsInvalid(const CMatrix<type>& Matrix)
 {
     if(Matrix.m_data==NULL\
        ||Matrix.m_row==0\
        ||Matrix.m_column==0)
+    {
+        if(DBG_LVL>=DBG_WARNING)
+            std::cout<<"No data in this matrix!!"<<std::endl;
         return RET_INVALIDE;
+    }
+    return RET_SUCCESS;
 }
-#endif /* Modify by Amos.zhu */
-
 
 template<typename type>
 Err_t CMatrix<type>::GetDataFrom(type* table)
@@ -192,6 +213,7 @@ CMatrix<type>& CMatrix<type>::operator=(const CMatrix<type>& otherMatrix)
     }
 
     this->Destroy();
+    //this=&otherMatrix;
     copy(*this,otherMatrix);
 
     return *this;
@@ -388,6 +410,7 @@ CMatrix<type>& CMatrix<type>::operator*=(const CMatrix<type>& otherMatrix)
         }
     }
     copy(*this,*static_cast<const CMatrix<type>* >(temp_Matrix));
+    delete temp_Matrix;
     return *this;
 }
 
@@ -472,9 +495,9 @@ void CMatrix<type>::rowExchange(int to,int from,CMatrix<type>& matrix)
     }
     int len=sizeof(type)*matrix.m_column;
     type* temp=new type[matrix.m_column];
-    memcpy(temp,&matrix.m_data[to*m_column],len);
-    memcpy(&matrix.m_data[to*m_column],&matrix.m_data[from*m_column],len);
-    memcpy(&matrix.m_data[from*m_column],temp,len);
+    memcpy(temp,&matrix.m_data[to*matrix.m_column],len);
+    memcpy(&matrix.m_data[to*matrix.m_column],&matrix.m_data[from*matrix.m_column],len);
+    memcpy(&matrix.m_data[from*matrix.m_column],temp,len);
     if(DBG_LVL>=DBG_ERROR)
     {
         std::cout<<"change "<<from<<" and "<<to<<std::endl;
@@ -487,7 +510,7 @@ void CMatrix<type>::rowExchange(int to,int from,CMatrix<type>& matrix)
 template<typename type>
 void CMatrix<type>::columnExchange(int to,int from,CMatrix<type>& matrix)
 {
-    if(to-->matrix.m_column||from-->matrix.m_column)
+    if(to>matrix.m_column||from>matrix.m_column)
     {
         if(DBG_LVL>=DBG_ERROR)
             std::cout<<"Caution its size,column="<<m_column<<std::endl;
@@ -497,9 +520,9 @@ void CMatrix<type>::columnExchange(int to,int from,CMatrix<type>& matrix)
     type temp;
     for(int i=0; i<matrix.m_row; i++)
     {
-        temp=matrix.m_data[i*m_column+to];
-        matrix.m_data[i*m_column+to]=matrix.m_data[i*m_column+from];
-        matrix.m_data[i*m_column+from]=temp;
+        temp=matrix.m_data[i*matrix.m_column+to];
+        matrix.m_data[i*matrix.m_column+to]=matrix.m_data[i*matrix.m_column+from];
+        matrix.m_data[i*matrix.m_column+from]=temp;
     }
 }
 
@@ -512,50 +535,58 @@ bool CMatrix<type>::check_pivot(int m,int n,CMatrix<type>& Matrix_A)
         return false;
 }
 
-/*************************************************************************************
-*       The function of elimnation
+/**************************************************************************************************
 *
-*   Sample Matrix:
+*       1.The function of elimnation
 *
-*   1.
-*   ===================
-*   |3  2   3   4   5|| <-pivot_Row
-*   |4  5   6   7   8|| <-temp_Row*3/4
-*   |9  10  2   4   5||
-*   ===================
+*       2.It is a function to simulate matrix factorization,matrix_A=L*U;
 *
-*   2.
-*   ======================
-*   |3    2    3    4   5||
-*   |3  15/4 18/4 21/4  6||   then temp_row minus pivot_row
-*   |9    10   2    4   5||
-*   ======================
+*       @Usage:     matrix_A.Elimination(L,U);
+*       @output:    matrix L & U store low triangle matrix and up triangle matrix, separately
+*       Sample Matrix:
 *
-*   3.
-*   ====================
-*   |3   2   3   4   5||
-*   |0  7/4 6/4 5/4  1||     after elimination,do same for the 3rd row;
-*   |9  10   2   4   5||
-*   ===================
+*       1.
+*       -------------------------
+*       |   3  2   3   4   5    | <-pivot_Row
+*       |   4  5   6   7   8    |<-temp_Row*3/4
+*       |   9  10  2   4   5    |
+*       =========================
 *
-*   If we want to do elmination, temp_row must mutiple 3 then
-*   divde 4 to ensure temp_row can do elimination from pivot_row.
-*   Some times the type is float, that mean: even my temp_row has been subtracted
-*   by pivot row,but it cannot ensure temp_row's column is 0,so assign 0 intentionly.
-**************************************************************************************/
+*       2.
+*       -----------------------------
+*       |   3    2    3    4   5    |
+*       |   3  15/4 18/4 21/4  6    |   then temp_row minus pivot_row
+*       |   9    10   2    4   5    |
+*       =============================
+*
+*       3.
+*       -------------------------
+*       |   3   2   3   4   5   |
+*       |   0  7/4 6/4 5/4  1   |     after elimination,do same for the 3rd row;
+*       |   9  10   2   4   5   |
+*       =========================
+*
+*       If we want to do elmination, temp_row must mutiple 3 then
+*       divde 4 to ensure temp_row can do elimination from pivot_row.
+*
+*       @caution: Some times the type is float, that mean: even my temp_row has been subtracted
+*       by pivot row,but it cannot ensure temp_row's column is 0,so assign 0 intentionly.
+*
+***********************************************************************************************/
 
 
 template<typename type>
-Err_t CMatrix<type>::Elimination(const CMatrix<type>& Matrix_A,CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U)
+Err_t CMatrix<type>::Elimination(CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U)
 {
-    IsInvalid(Matrix_A);
+    if(IsInvalid(*this)!=RET_SUCCESS)
+        return RET_FAILED;
 
     CMatrix<type>* U=new CMatrix<type>;
     CMatrix<type>* P=new CMatrix<type>;
 
     type* temp_row; //Use to store the temp row data
 
-    copy(*U,Matrix_A);
+    copy(*U,*this);
 
     int m=0,n=0;
     int pivot_row=-1;
@@ -630,6 +661,79 @@ Err_t CMatrix<type>::Elimination(const CMatrix<type>& Matrix_A,CMatrix<type>& Ma
     return RET_SUCCESS;
 }
 
+/****************************************************************************************
+*
+*       This function is to get the matrix's cofactor
+*
+*       @Usage:     Matrix_A.cofactor(matrix_co,row,column);
+*       @output:    matrix_co will store the matrix_A[row][column]'s cofactor matrix;
+*
+*       1.Sample: 4*5 matrix A
+*
+*       -------------------------
+*       |   1   2   4   5   6   |
+*       |   3   4   4   4   9   |
+*       |   2   5   5   1   7   |
+*       |   8   8   8   8   8   |
+*       =========================
+*
+*       2.if we want to get a[i][j]'s cofactor--->
+*
+*       sample: get a[2][3]'s cofactor, column and row count from 0 not 1;
+*       Eliminate the entries belong to row i and column j;
+*
+*       -------------------------
+*       |   1   2   4   |   6   |    row <- i
+*       |   3   4   4   |   9   |    column <- j
+*       |   -   -   -   1   -   |
+*       |   8   8   8   -   8   |
+*       =========================
+*
+*       3.then get its cofactor matrix_co, size is 3*4
+*
+*       ---------------------
+*       |   1   2   4   6   |       row <- k
+*       |   3   4   4   9   |       columm <- l
+*       |   8   8   8   8   |
+*       =====================
+*
+**************************************************************************************/
+
+template<typename type>
+Err_t CMatrix<type>::Cofactor(CMatrix<type>& matrix_co,int m,int n)
+{
+    if(IsInvalid(*this)!=RET_SUCCESS)
+        return RET_FAILED;
+
+    matrix_co.Destroy();
+    matrix_co.m_row=this->m_row-1;
+    matrix_co.m_column=this->m_column-1;
+    matrix_co.m_data=new type[matrix_co.m_row*matrix_co.m_column];
+
+    int i,j; //marked Matrix_A's position
+    int k,l; //marked Matrix_co's position
+    for(i=0,k=0; i<this->m_row, k<matrix_co.m_row; i++,k++)
+    {
+        if(i==m)
+        {
+            k--;
+            continue;
+        }
+        for(j=0,l=0; j<this->m_column ,l<matrix_co.m_column; j++,l++)
+        {
+            if(j==n)
+            {
+                l--;
+                continue;
+            }
+
+            matrix_co.m_data[k*matrix_co.m_column+l]=this->m_data[i*this->m_column+j];
+        }
+    }
+    return RET_SUCCESS;
+}
+
+
 template<typename type>
 std::ostream& operator<<(std::ostream& output,const CMatrix<type>& otherMatrix)
 {
@@ -648,6 +752,27 @@ std::ostream& operator<<(std::ostream& output,const CMatrix<type>& otherMatrix)
     }
 
     return output;
+}
+
+template<typename type>
+CMatrix<type>& operator*(type val,const CMatrix<type>& otherMatrix)
+{
+    if(otherMatrix.m_data==NULL||otherMatrix.m_column==0||otherMatrix.m_row==0)
+        return static_cast<CMatrix<type> >(otherMatrix);
+
+    CMatrix<type>* matrix_temp=new CMatrix<type>(otherMatrix.m_row,otherMatrix.m_column);
+    matrix_temp->m_column=otherMatrix.m_column;
+    matrix_temp->m_row=otherMatrix.m_row;
+
+    for(int m=0; m<otherMatrix.m_row; m++)
+    {
+        for(int n=0; n<otherMatrix.m_column; n++)
+        {
+            matrix_temp->m_data[matrix_temp->m_column*m+n]=val*otherMatrix.m_data[otherMatrix.m_column*m+n];
+        }
+    }
+
+    return *matrix_temp;
 }
 
 
