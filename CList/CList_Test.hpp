@@ -3,6 +3,7 @@
 
 void ReverseTest(void);
 void SearchTest(void);
+void DeleteTest(void);
 
 
 

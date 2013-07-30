@@ -125,6 +125,12 @@ AM_S32 CList<type>::Search(type elem)
     return -1;
 }
 
+/***********************************************************
+*
+*   There two different strategy to delete an element
+*
+*
+***********************************************************/
 template<class type>
 Err_t CList<type>::Delete(type elem)
 {
@@ -133,10 +139,11 @@ Err_t CList<type>::Delete(type elem)
 
     node_t<type>* current;
     node_t<type>* temp;
+    current=m_head;
+
     BOOL found=FALSE;
     if(m_head->element==elem)
     {
-        current=m_head;
         m_head=m_head->next;
         delete current;
         current=NULL;
@@ -149,16 +156,44 @@ Err_t CList<type>::Delete(type elem)
             found=TRUE;
             continue;
         }
+        temp=current;
         current=current->next;
     }
-    if(current!=NULL)
+
+    if(current==NULL)
+        return OPERATOR_FAILED;
+
+#if 0 //This method will leave a zero value... Why?
+    if(current->next!=NULL)
     {
+        printf("Next!=NULL, elem=%d\n",elem);
         current->element=current->next->element;
         temp=current->next;
         current->next=current->next->next;
         delete temp;
+        temp=NULL;
+    }
+    else
+    {
+        printf("Next==NULL, elem=%d\n",elem);
+        temp=current;
+        delete current;
+        current=NULL;
     }
     return RETURN_SUCCESS;
+#else
+    if(current->next!=NULL)
+    {
+        temp->next=current->next;
+    }
+    else
+    {
+        temp->next=NULL;
+    }
+    delete current;
+    return RETURN_SUCCESS;
+
+#endif /* Modify by Amos.zhu */
 }
 
 template<class type>
@@ -272,7 +307,7 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
         current=object.m_head;
 
         newNode=new node_t<type>;
-        newNode->element=current.element;
+        newNode->element=current->element;
         newNode->next=NULL;
 
         m_head=newNode;
@@ -281,7 +316,7 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
         for(; current!=NULL; current=current->next)
         {
             newNode=new node_t<type>;
-            newNode->element=current.element;
+            newNode->element=current->element;
             newNode->next=NULL;
             previous->next=newNode;
             previous=newNode;

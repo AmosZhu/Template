@@ -4,7 +4,8 @@
 
 int main(void)
 {
-    ReverseTest(); //Done
-    SearchTest();
+    //ReverseTest(); //Done
+    //SearchTest();//Done
+    DeleteTest();
     return 1;
 }
