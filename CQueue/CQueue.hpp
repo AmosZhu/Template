@@ -3,18 +3,18 @@
 
 #include <iostream>
 #include <iomanip>
-#include "AmosType.h"
+#include "AmosType.hpp"
 
 
 template<typename type>
-typedef struct NODE_TYPE
+struct node_t
 {
     type element;
-    NODE_TYPE* next;
-} node_t;
+    node_t* next;
+};
 
 
-template<typename type>
+template<class type>
 class CQueue
 {
 public:
@@ -23,9 +23,9 @@ public:
     ~CQueue(void);
 
 
-    Err_t Enqueue(type* elem);
+    Err_t Enqueue(type elem);
     type* Dequeue(void);
-    Err_t Search(type* elem);
+    AM_S32 Search(type elem);
     BOOL IsEmpty(void);
     void Destroy(void);
     void PrintOut(void);
@@ -34,24 +34,24 @@ public:
     CQueue<type>& operator=(const CQueue<type>& object);
 
 private:
-    node_t* m_head;
-    node_t* m_tail;
+    node_t<type>* m_head;
+    node_t<type>* m_tail;
 
 
 public:
-    template<typename type> friend std::ostream& operator<<(std::ostream& output,const CQueue<type>& object)
+    template<typename T> friend std::ostream& operator<<(std::ostream& output,const CQueue<T>& object);
 
 };
 
 
-template<typename type>
+template<class type>
 CQueue<type>::CQueue(void)
 {
     m_head=NULL;
     m_tail=NULL;
 }
 
-template<typename type>
+template<class type>
 CQueue<type>::CQueue(const CQueue<type>& object)
 {
     if(this==&object)
@@ -86,13 +86,13 @@ CQueue<type>::CQueue(const CQueue<type>& object)
     return;
 }
 
-template<typename type>
+template<class type>
 CQueue<type>::~CQueue(void)
 {
     Destroy();
 }
 
-template<typename type>
+template<class type>
 CQueue<type>& CQueue<type>::operator=(const CQueue<type>& object)
 {
     if(this==&object)
@@ -128,14 +128,14 @@ CQueue<type>& CQueue<type>::operator=(const CQueue<type>& object)
     return *this;
 }
 
-template<typename type>
-Err_t CQueue<type>::Enqueue(type* elem)
+template<class type>
+Err_t CQueue<type>::Enqueue(type elem)
 {
-    if(elem==NULL)
+    if(&elem==NULL)
         return INVALIDE_PARAMET;
 
     node_t<type>* newNode=new node_t<type>;
-    newNode->element=*elem;
+    newNode->element=elem;
     newNode->next=NULL;
 
     if(m_head==NULL||m_tail==NULL) //Nothing in CQueue,put the elem as first node;
@@ -151,7 +151,7 @@ Err_t CQueue<type>::Enqueue(type* elem)
 }
 
 //FIFO
-template<typename type>
+template<class type>
 type* CQueue<type>::Dequeue(void)
 {
     if(this->IsEmpty())
@@ -163,27 +163,25 @@ type* CQueue<type>::Dequeue(void)
     return current;
 }
 
-template<typename type>
-Err_t CQueue<type>::Search(type* elem)
+template<class type>
+AM_S32 CQueue<type>::Search(type elem)
 {
     node_t<type>* current;
-
-    if(elem==NULL)
-        return INVALIDE_PARAMET;
+    AM_S32 pos=0;
+    if(&elem==NULL)
+        return -1;
 
     if(!this->IsEmpty())
     {
-        for(current=this->m_head; current!=NULL; current=current->next)
-            if(current->element==*elem)
-                return RETURN_SUCCESS;
+        for(current=this->m_head; current!=NULL; current=current->next,pos++)
+            if(current->element==elem)
+                return pos;
     }
 
-    std::cout<<"element not found!"<<std::endl;
-
-    return OPERATOR_FAILED;
+    return -1;
 }
 
-template<typename type>
+template<class type>
 BOOL CQueue<type>::IsEmpty(void)
 {
     if(m_head==NULL||m_tail==NULL)
@@ -192,16 +190,17 @@ BOOL CQueue<type>::IsEmpty(void)
     return FALSE;
 }
 
-template<typename type>
+template<class type>
 void CQueue<type>::Destroy(void)
 {
     if(m_head==NULL||m_tail==NULL)
         return;
 
     node_t<type>* current;
-    current=m_head;
+
     while(m_head!=NULL)
     {
+        current=m_head;
         m_head=m_head->next;
         delete current;
     }
@@ -210,7 +209,7 @@ void CQueue<type>::Destroy(void)
     return;
 }
 
-template<typename type>
+template<class type>
 void CQueue<type>::PrintOut(void)
 {
     if(this->IsEmpty())
@@ -227,8 +226,8 @@ void CQueue<type>::PrintOut(void)
     std::cout<<std::endl;
 }
 
-template<typename type>
-std::ostream& operator<<(std::ostream& output,const CQueue<type>& object)
+template<typename T>
+std::ostream& operator<<(std::ostream& output,const CQueue<T>& object)
 {
     if(object.IsEmpty())
     {
@@ -236,9 +235,9 @@ std::ostream& operator<<(std::ostream& output,const CQueue<type>& object)
         return output;
     }
 
-    node_t<type>* current;
+    node_t<T>* current;
 
-    for(current=this->m_head; current!=NULL; current=current->next)
+    for(current=object.m_head; current!=NULL; current=current->next)
     {
         output<<current->element<<" ";
     }
