@@ -13,5 +13,5 @@ void CQueueInOutTest(void)
             printf("data[%d]=%d insert failed!\n",i,data[i]);
     }
 
-    q1.PrintOut();
+    std::cout<<q1;
 }

@@ -23,7 +23,7 @@ public:
     Err_t Insert(type elem);
     Err_t Delete(type elem);
     AM_S32 Search(type elem);
-    BOOL IsEmpty(void);
+    BOOL IsEmpty(void) const;
     void Destroy(void);
     void PrintOut(void);
     AM_U32 CountNo(void);
@@ -36,7 +36,7 @@ private:
     node_t<type>* m_head;
 
 public:
-    template<class T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
+    template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
 };
 
 
@@ -162,12 +162,12 @@ Err_t CList<type>::Delete(type elem)
 }
 
 template<class type>
-BOOL CList<type>::IsEmpty(void)
+BOOL CList<type>::IsEmpty(void) const
 {
     if(m_head==NULL)
-        return true;
+        return TRUE;
 
-    return false;
+    return FALSE;
 }
 
 template<class type>
@@ -208,17 +208,18 @@ void CList<type>::Destroy(void)
 template<class type>
 void CList<type>::PrintOut(void)
 {
-    if(!this->IsEmpty())
+    if(this->IsEmpty())
     {
-        node_t<type>* current;
-        current=m_head;
-        while(current!=NULL)
-        {
-            std::cout<<current->element<<" ";
-            current=current->next;
-        }
-        std::cout<<std::endl;
+        std::cout<<"It is an empty list!"<<std::endl;
     }
+
+    node_t<type>* current;
+
+    for(current=this->m_head; current!=NULL; current=current->next)
+    {
+        std::cout<<current->element<<" ";
+    }
+    std::cout<<std::endl;
 }
 
 /******************************************************************************
@@ -290,20 +291,22 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
     return *this;
 }
 
-template<class type>
-std::ostream& operator<<(std::ostream& output,const CList<type>& object)
+template<typename T>
+std::ostream& operator<<(std::ostream& output,const CList<T>& object)
 {
-    if(object.m_head!=NULL)
+    if(object.IsEmpty())
     {
-        node_t<type>* current;
-        current=object.m_head;
-        while(current!=NULL)
-        {
-            output<<current->element<<" ";
-            current=current->next;
-        }
-        output<<std::endl;
+        output<<"It is an empty list!"<<std::endl;
+        return output;
     }
+
+    node_t<T>* current;
+
+    for(current=object.m_head; current!=NULL; current=current->next)
+    {
+        output<<current->element<<" ";
+    }
+    output<<std::endl;
     return output;
 }
 

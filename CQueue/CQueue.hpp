@@ -26,7 +26,7 @@ public:
     Err_t Enqueue(type elem);
     type* Dequeue(void);
     AM_S32 Search(type elem);
-    BOOL IsEmpty(void);
+    BOOL IsEmpty(void) const;
     void Destroy(void);
     void PrintOut(void);
 
@@ -182,7 +182,7 @@ AM_S32 CQueue<type>::Search(type elem)
 }
 
 template<class type>
-BOOL CQueue<type>::IsEmpty(void)
+BOOL CQueue<type>::IsEmpty(void) const
 {
     if(m_head==NULL||m_tail==NULL)
         return TRUE;
