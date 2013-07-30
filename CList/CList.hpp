@@ -2,18 +2,17 @@
 #define _AMOS_CLIST_H
 
 #include <iostream>
-#include <ionamp>
-#include "AmosType.h"
+#include "AmosType.hpp"
 
 template<typename type>
-typedef struct NODE_TYPE
+struct node_t
 {
     type element;
-    NODE_TYPE* next;
-} node_t;
+    node_t* next;
+};
 
 
-template<typename type>
+template<class type>
 class CList
 {
 public:
@@ -21,31 +20,33 @@ public:
     CList(const CList<type>& object);
     ~CList(void);
 
-    Err_t Insert(type* elem);
-    Err_t Delete(type* elem);
-    Err_t Search(type* elem);
+    Err_t Insert(type elem);
+    Err_t Delete(type elem);
+    AM_S32 Search(type elem);
     BOOL IsEmpty(void);
     void Destroy(void);
+    void PrintOut(void);
+    AM_U32 CountNo(void);
     Err_t Reverse(void);
 
 public:
     CList<type>& operator=(const CList<type>& object);
 
 private:
-    node_t* m_head;
+    node_t<type>* m_head;
 
 public:
-    template<typename type> friend std::ostream& operator<<(std::ostream& output,const CList<type>& object);
+    template<class T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
 };
 
 
-template<typename type>
+template<class type>
 CList<type>::CList(void)
 {
     m_head=NULL;
 }
 
-template<typename type>
+template<class type>
 CList<type>::CList(const CList<type>& object)
 {
     if(this==&object)
@@ -80,67 +81,60 @@ CList<type>::CList(const CList<type>& object)
     return;
 }
 
-template<typename type>
+template<class type>
 CList<type>::~CList(void)
 {
     Destroy();
 }
 
-
-
-template<typename type>
-Err_t CList<type>::Insert(type* elem)
+template<class type>
+Err_t CList<type>::Insert(type elem)
 {
-    if(elem==NULL)
+    if(&elem==NULL)
         return INVALIDE_PARAMET;
 
     node_t<type>* newNode=new node_t<type>;
-    newNode->element=*elem;
+    newNode->element=elem;
     newNode->next=NULL;
 
     if(m_head!=NULL) //Nothing in CList,put the elem as first node;
     {
         newNode->next=m_head;
-        m_head=m_head->next;
+    }
 
-    }
-    else
-    {
-        m_head=newNode;
-    }
+    m_head=newNode;
     return RETURN_SUCCESS;
 }
 
-template<typename type>
-Err_t CList<type>::Search(type* elem)
+template<class type>
+AM_S32 CList<type>::Search(type elem)
 {
     node_t<type>* current;
+    AM_S32 position = 0;
 
-    if(elem==NULL)
-        return INVALIDE_PARAMET;
+    if(&elem==NULL)
+        return -1;
 
     if(!this->IsEmpty())
     {
-        for(current=this->m_head; current!=NULL; current=current->next)
-            if(current->element==*elem)
-                return RETURN_SUCCESS;
+        for(current=this->m_head; current!=NULL; current=current->next,position++)
+            if(current->element==elem)
+                return position;
     }
 
-    std::cout<<"element not found!"<<std::endl;
-
-    return OPERATOR_FAILED;
+    return -1;
 }
 
-template<typename type>
-Err_t CList<type>::Delete(type* elem)
+template<class type>
+Err_t CList<type>::Delete(type elem)
 {
-    if(elem==NULL)
+    if(&elem==NULL)
         return INVALIDE_PARAMET;
 
     node_t<type>* current;
     node_t<type>* temp;
     BOOL found=FALSE;
-    if(m_head->element==*elem)
+    if(m_head->element==elem)
     {
         current=m_head;
         m_head=m_head->next;
@@ -150,7 +144,7 @@ Err_t CList<type>::Delete(type* elem)
     }
     while(!found&&current!=NULL)
     {
-        if(current->element==*elem)
+        if(current->element==elem)
         {
             found=TRUE;
             continue;
@@ -167,7 +161,7 @@ Err_t CList<type>::Delete(type* elem)
     return RETURN_SUCCESS;
 }
 
-template<typename type>
+template<class type>
 BOOL CList<type>::IsEmpty(void)
 {
     if(m_head==NULL)
@@ -176,21 +170,55 @@ BOOL CList<type>::IsEmpty(void)
     return false;
 }
 
-template<typename type>
+template<class type>
+AM_U32 CList<type>::CountNo(void)
+{
+    AM_U32 count=0;
+    node_t<type>* current;
+    if(!this->IsEmpty())
+    {
+        current=m_head;
+        while(current!=NULL)
+        {
+            count++;
+            current=current->next;
+        }
+    }
+    return count;
+}
+
+template<class type>
 void CList<type>::Destroy(void)
 {
-    if(m_head==NULL)
+    if(this->m_head==NULL)
         return;
 
     node_t<type>* current;
-    current=m_head;
-    while(m_head!=NULL)
+
+    while(this->m_head!=NULL)
     {
-        m_head=m_head->next;
+        current=this->m_head;
+        this->m_head=this->m_head->next;
         delete current;
     }
-    m_head=NULL;
+    this->m_head=NULL;
     return;
+}
+
+template<class type>
+void CList<type>::PrintOut(void)
+{
+    if(!this->IsEmpty())
+    {
+        node_t<type>* current;
+        current=m_head;
+        while(current!=NULL)
+        {
+            std::cout<<current->element<<" ";
+            current=current->next;
+        }
+        std::cout<<std::endl;
+    }
 }
 
 /******************************************************************************
@@ -203,7 +231,7 @@ void CList<type>::Destroy(void)
 *   This function reverse list data
 *******************************************************************************/
 
-template<typename type>
+template<class type>
 Err_t CList<type>::Reverse(void)
 {
     if(this->IsEmpty())
@@ -213,10 +241,10 @@ Err_t CList<type>::Reverse(void)
     node_t<type>* next;
     next=m_head->next;
     previous=m_head;
+    m_head->next=NULL;
 
     while(next!=NULL)
     {
-        m_head->next=NULL;
         previous=m_head;
         m_head=next;
         next=m_head->next;
@@ -228,7 +256,7 @@ Err_t CList<type>::Reverse(void)
 }
 
 
-template<typename type>
+template<class type>
 CList<type>& CList<type>::operator=(const CList<type>& object)
 {
     if(this==&object)
@@ -262,13 +290,13 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
     return *this;
 }
 
-template<typename type>
-std::otream& operator<<(std::ostream& output,const CList<type>& object)
+template<class type>
+std::ostream& operator<<(std::ostream& output,const CList<type>& object)
 {
-    if(!object.IsEmpty())
+    if(object.m_head!=NULL)
     {
         node_t<type>* current;
-        current=m_head;
+        current=object.m_head;
         while(current!=NULL)
         {
             output<<current->element<<" ";

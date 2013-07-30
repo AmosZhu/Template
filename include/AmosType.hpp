@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define BOOL int
+#define FALSE (0)
+#define TRUE (1)
+
+
 typedef enum ERROR_TYPE
 {
     RETURN_SUCCESS=0,
@@ -12,9 +17,7 @@ typedef enum ERROR_TYPE
 }
 Err_t;
 
-typedef int BOOL;
-typedef 1 TRUE;
-typedef 0 FALSE;
+
 typedef unsigned long AM_U32;
 typedef long AM_S32;
 typedef unsigned long long AM_U64;
