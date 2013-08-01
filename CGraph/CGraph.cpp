@@ -15,7 +15,7 @@ CGraph::CGraph(const CGraph& object)
 
 CGraph::~CGraph(void)
 {
-    //Destroy();
+    Destroy();
 }
 
 void CGraph::Destroy(void)
@@ -66,6 +66,7 @@ Err_t CGraph::Create(char* path)
         }
     }
 
+    fclose(fp);
     return RETURN_SUCCESS;
 }
 
