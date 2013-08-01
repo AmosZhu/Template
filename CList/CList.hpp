@@ -4,13 +4,6 @@
 #include <iostream>
 #include "AmosType.hpp"
 
-template<typename type>
-struct node_t
-{
-    type element;
-    node_t* next;
-};
-
 
 template<class type>
 class CList

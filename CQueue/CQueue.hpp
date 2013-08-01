@@ -13,13 +13,6 @@
 *
 ************************************************************/
 
-template<typename type>
-struct node_t
-{
-    type element;
-    node_t* next;
-};
-
 
 template<class type>
 class CQueue
@@ -36,6 +29,8 @@ public:
     AM_U32 CountNo(void);
     BOOL IsEmpty(void) const;
     void PrintOut(void);
+    void Destroy(void);
+
 
 public:
     CQueue<type>& operator=(const CQueue<type>& object);
@@ -43,9 +38,6 @@ public:
 private:
     node_t<type>* m_head;
     node_t<type>* m_tail;
-
-private:
-    void destroy(void);
 
 public:
     template<typename T> friend std::ostream& operator<<(std::ostream& output,const CQueue<T>& object);
@@ -98,7 +90,7 @@ CQueue<type>::CQueue(const CQueue<type>& object)
 template<class type>
 CQueue<type>::~CQueue(void)
 {
-    destroy();
+    Destroy();
 }
 
 template<class type>
@@ -189,7 +181,7 @@ BOOL CQueue<type>::IsEmpty(void) const
 }
 
 template<class type>
-void CQueue<type>::destroy(void)
+void CQueue<type>::Destroy(void)
 {
     if(m_head==NULL||m_tail==NULL)
         return;
@@ -231,7 +223,7 @@ CQueue<type>& CQueue<type>::operator=(const CQueue<type>& object)
         return *this;
 
     if(!this->IsEmpty())
-        destroy();
+        Destroy();
 
     if(!object.IsEmpty())
     {

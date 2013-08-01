@@ -14,8 +14,18 @@ typedef enum ERROR_TYPE
     RETURN_SUCCESS=0,
     OPERATOR_FAILED=1,
     INVALIDE_PARAMET=2,
+    RESOURCE_UNAVAILABLE=3,
+    FILEDATA_CORRUPT=4,
 }
 Err_t;
+
+template<typename type>
+struct node_t
+{
+    type element;
+    node_t* next;
+};
+
 
 
 typedef unsigned long AM_U32;
