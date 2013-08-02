@@ -18,15 +18,8 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string.h>
 
-
-#if 0
-#define IsInvalid(Matrix) {\
-    if(Matrix.m_data==NULL\
-        ||Matrix.m_row==0\
-        ||Matrix.m_column==0)\
-        return RET_INVALIDE;}
-#endif /* Modify by Amos.zhu */
 
 typedef enum ERROR_TYPE
 {
@@ -44,7 +37,7 @@ typedef enum DEBUG_LEVEL
 } DEBUG_T;
 
 
-template<typename type>
+template<class type>
 class CMatrix
 {
 public:
@@ -68,7 +61,7 @@ public: //Matrix operations
     CMatrix<type>& operator=(const CMatrix<type>& otherMatrix);
     CMatrix<type>& operator+(const CMatrix<type>& otherMatrix);
     CMatrix<type>& operator-(const CMatrix<type>& otherMatrix);
-    CMatrix<type>& operator*(const CMatrix<type>& otherMatrix);
+    CMatrix<type> operator*(const CMatrix<type>& otherMatrix);
     CMatrix<type>& operator+=(const CMatrix<type>& otherMatrix);
     CMatrix<type>& operator-=(const CMatrix<type>& otherMatrix);
     CMatrix<type>& operator*=(const CMatrix<type>& otherMatrix);
@@ -79,7 +72,7 @@ public:
     void Destroy(void);
     Err_t ShowMatrix(void);
     static void SetDbgLVL(DEBUG_T level);
-    inline Err_t IsInvalid(const CMatrix<type>& Matrix);
+    bool IsInvalid(const CMatrix<type>& Matrix);
 
 private:
     type* m_data;
@@ -95,16 +88,16 @@ private://Function
 
 
 public: //friend function
-    template<typename type> friend std::ostream& operator<<(std::ostream& output,const CMatrix<type>& matrix);
-    template<typename type> friend CMatrix<type>& operator*(type val,const CMatrix<type>& otherMatrix);
+    template<typename T> friend std::ostream& operator<<(std::ostream& output,const CMatrix<T>& matrix);
+    template<typename T> friend CMatrix<T> operator*(T val,const CMatrix<T>& otherMatrix);
 
 };
 
 
-template<typename type>
+template<class type>
 DEBUG_T CMatrix<type>::DBG_LVL=DBG_NONE;
 
-template<typename type>
+template<class type>
 CMatrix<type>::CMatrix(void)
 {
     m_column=0;
@@ -112,7 +105,7 @@ CMatrix<type>::CMatrix(void)
     m_data=NULL;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>::CMatrix(int m,int n,type* table)
 {
     if(m==0||n==0)
@@ -143,7 +136,7 @@ CMatrix<type>::CMatrix(int m,int n,type* table)
     return;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>::CMatrix(const CMatrix<type>& otherMatrix)
 {
     if(this==&otherMatrix)
@@ -163,14 +156,14 @@ CMatrix<type>::CMatrix(const CMatrix<type>& otherMatrix)
     return;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>::~CMatrix(void)
 {
     Destroy();
 }
 
-template<typename type>
-inline Err_t CMatrix<type>::IsInvalid(const CMatrix<type>& Matrix)
+template<class type>
+bool CMatrix<type>::IsInvalid(const CMatrix<type>& Matrix)
 {
     if(Matrix.m_data==NULL\
        ||Matrix.m_row==0\
@@ -178,12 +171,12 @@ inline Err_t CMatrix<type>::IsInvalid(const CMatrix<type>& Matrix)
     {
         if(DBG_LVL>=DBG_WARNING)
             std::cout<<"No data in this matrix!!"<<std::endl;
-        return RET_INVALIDE;
+        return true;
     }
-    return RET_SUCCESS;
+    return false;
 }
 
-template<typename type>
+template<class type>
 Err_t CMatrix<type>::GetDataFrom(type* table)
 {
     if(table==NULL)
@@ -196,7 +189,7 @@ Err_t CMatrix<type>::GetDataFrom(type* table)
 
 
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator=(const CMatrix<type>& otherMatrix)
 {
     if(this==&otherMatrix)
@@ -213,13 +206,12 @@ CMatrix<type>& CMatrix<type>::operator=(const CMatrix<type>& otherMatrix)
     }
 
     this->Destroy();
-    //this=&otherMatrix;
     copy(*this,otherMatrix);
 
     return *this;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator+(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
@@ -247,7 +239,7 @@ CMatrix<type>& CMatrix<type>::operator+(const CMatrix<type>& otherMatrix)
     return *temp_Matrix;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator-(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
@@ -275,8 +267,8 @@ CMatrix<type>& CMatrix<type>::operator-(const CMatrix<type>& otherMatrix)
     return *temp_Matrix;
 }
 
-template<typename type>
-CMatrix<type>& CMatrix<type>::operator*(const CMatrix<type>& otherMatrix)
+template<class type>
+CMatrix<type> CMatrix<type>::operator*(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
        ||otherMatrix.m_row==0||this->m_row==0\
@@ -294,6 +286,7 @@ CMatrix<type>& CMatrix<type>::operator*(const CMatrix<type>& otherMatrix)
         return *this;
     }
 
+#if 0 //This code will cause memory leak
     CMatrix<type>* temp_Matrix=new CMatrix<type>(this->m_row,otherMatrix.m_column);
     int swap_data=0;
     for(int i=0; i<temp_Matrix->m_row; i++)
@@ -315,10 +308,34 @@ CMatrix<type>& CMatrix<type>::operator*(const CMatrix<type>& otherMatrix)
     }
 
     return *temp_Matrix;
+#else
+    CMatrix<type> temp_Matrix(this->m_row,otherMatrix.m_column);
+    int swap_data=0;
+    for(int i=0; i<temp_Matrix.m_row; i++)
+    {
+        for(int j=0; j<temp_Matrix.m_column; j++)
+        {
+            for(int k=0; k<this->m_column; k++)
+            {
+                swap_data+=this->m_data[i*this->m_column+k]*otherMatrix.m_data[k*otherMatrix.m_column+j];
+                if(DBG_LVL>=DBG_INFO)
+                {
+                    std::cout<<"i="<<i<<",j="<<j<<",k="<<k<<std::endl;
+                    std::cout<<"swap_data="<<this->m_data[i*this->m_column+k]<<"*"<<otherMatrix.m_data[k*otherMatrix.m_column+j]<<std::endl;
+                }
+            }
+            temp_Matrix.m_data[i*temp_Matrix.m_column+j]=swap_data;
+            swap_data=0;
+        }
+    }
+
+    return temp_Matrix;
+
+#endif /* Modify by Amos.zhu */
 }
 
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator+=(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
@@ -344,7 +361,7 @@ CMatrix<type>& CMatrix<type>::operator+=(const CMatrix<type>& otherMatrix)
     return *this;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator-=(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
@@ -371,7 +388,7 @@ CMatrix<type>& CMatrix<type>::operator-=(const CMatrix<type>& otherMatrix)
     return *this;
 }
 
-template<typename type>
+template<class type>
 CMatrix<type>& CMatrix<type>::operator*=(const CMatrix<type>& otherMatrix)
 {
     if(otherMatrix.m_column==0||this->m_column==0\
@@ -416,19 +433,19 @@ CMatrix<type>& CMatrix<type>::operator*=(const CMatrix<type>& otherMatrix)
 
 
 
-template<typename type>
+template<class type>
 int CMatrix<type>::NoOfColumns(void)
 {
     return m_column;
 }
 
-template<typename type>
+template<class type>
 int CMatrix<type>::NoOfRows(void)
 {
     return m_row;
 }
 
-template<typename type>
+template<class type>
 void CMatrix<type>::Destroy(void)
 {
     if((m_data==NULL)||(m_column<=0)||(m_row<=0))
@@ -447,7 +464,7 @@ void CMatrix<type>::Destroy(void)
 
 }
 
-template<typename type>
+template<class type>
 Err_t CMatrix<type>::ShowMatrix(void)
 {
     if(m_data==NULL||m_column==0||m_row==0)
@@ -468,7 +485,7 @@ Err_t CMatrix<type>::ShowMatrix(void)
     return RET_SUCCESS;
 }
 
-template<typename type>
+template<class type>
 void CMatrix<type>::copy(CMatrix<type>& Dst,const CMatrix<type>& Src)
 {
     Dst.m_column=Src.m_column;
@@ -478,13 +495,13 @@ void CMatrix<type>::copy(CMatrix<type>& Dst,const CMatrix<type>& Src)
 }
 
 
-template<typename type>
+template<class type>
 void CMatrix<type>::SetDbgLVL(DEBUG_T level)
 {
     DBG_LVL=level;
 }
 
-template<typename type>
+template<class type>
 void CMatrix<type>::rowExchange(int to,int from,CMatrix<type>& matrix)
 {
     if(to>matrix.m_row||from>matrix.m_row)
@@ -507,7 +524,7 @@ void CMatrix<type>::rowExchange(int to,int from,CMatrix<type>& matrix)
 
 }
 
-template<typename type>
+template<class type>
 void CMatrix<type>::columnExchange(int to,int from,CMatrix<type>& matrix)
 {
     if(to>matrix.m_column||from>matrix.m_column)
@@ -526,7 +543,7 @@ void CMatrix<type>::columnExchange(int to,int from,CMatrix<type>& matrix)
     }
 }
 
-template<typename type>
+template<class type>
 bool CMatrix<type>::check_pivot(int m,int n,CMatrix<type>& Matrix_A)
 {
     if(Matrix_A.m_data[m*m_column+n]!=0)
@@ -575,10 +592,10 @@ bool CMatrix<type>::check_pivot(int m,int n,CMatrix<type>& Matrix_A)
 ***********************************************************************************************/
 
 
-template<typename type>
+template<class type>
 Err_t CMatrix<type>::Elimination(CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U)
 {
-    if(IsInvalid(*this)!=RET_SUCCESS)
+    if(IsInvalid(*this))
         return RET_FAILED;
 
     CMatrix<type>* U=new CMatrix<type>;
@@ -699,10 +716,10 @@ Err_t CMatrix<type>::Elimination(CMatrix<type>& Matrix_L,CMatrix<type>& Matrix_U
 *
 **************************************************************************************/
 
-template<typename type>
+template<class type>
 Err_t CMatrix<type>::Cofactor(CMatrix<type>& matrix_co,int m,int n)
 {
-    if(IsInvalid(*this)!=RET_SUCCESS)
+    if(IsInvalid(*this))
         return RET_FAILED;
 
     matrix_co.Destroy();
@@ -734,8 +751,8 @@ Err_t CMatrix<type>::Cofactor(CMatrix<type>& matrix_co,int m,int n)
 }
 
 
-template<typename type>
-std::ostream& operator<<(std::ostream& output,const CMatrix<type>& otherMatrix)
+template<typename T>
+std::ostream& operator<<(std::ostream& output,const CMatrix<T>& otherMatrix)
 {
     if(otherMatrix.m_data==NULL||otherMatrix.m_column==0||otherMatrix.m_row==0)
         return output;
@@ -754,13 +771,17 @@ std::ostream& operator<<(std::ostream& output,const CMatrix<type>& otherMatrix)
     return output;
 }
 
-template<typename type>
-CMatrix<type>& operator*(type val,const CMatrix<type>& otherMatrix)
+template<typename T>
+CMatrix<T> operator*(T val,const CMatrix<T>& otherMatrix)
 {
     if(otherMatrix.m_data==NULL||otherMatrix.m_column==0||otherMatrix.m_row==0)
-        return static_cast<CMatrix<type> >(otherMatrix);
+    {
+        CMatrix<T>* ret=NULL;
+        return *ret;
+    }
 
-    CMatrix<type>* matrix_temp=new CMatrix<type>(otherMatrix.m_row,otherMatrix.m_column);
+#if 0 //This code will cause memory leak
+    CMatrix<T>* matrix_temp=new CMatrix<T>(otherMatrix.m_row,otherMatrix.m_column);
     matrix_temp->m_column=otherMatrix.m_column;
     matrix_temp->m_row=otherMatrix.m_row;
 
@@ -773,6 +794,22 @@ CMatrix<type>& operator*(type val,const CMatrix<type>& otherMatrix)
     }
 
     return *matrix_temp;
+#else
+    CMatrix<T> matrix_temp(otherMatrix.m_row,otherMatrix.m_column);
+    matrix_temp.m_column=otherMatrix.m_column;
+    matrix_temp.m_row=otherMatrix.m_row;
+
+    for(int m=0; m<otherMatrix.m_row; m++)
+    {
+        for(int n=0; n<otherMatrix.m_column; n++)
+        {
+            matrix_temp.m_data[matrix_temp.m_column*m+n]=val*otherMatrix.m_data[otherMatrix.m_column*m+n];
+        }
+    }
+
+    return matrix_temp;
+
+#endif /* Modify by Amos.zhu */
 }
 
 
