@@ -26,7 +26,7 @@ void CQueueInOutTest(void)
     count=q1.CountNo();
     for(i=0; i<count; i++)
     {
-        out=q1.Dequeue();
+        q1.Dequeue(&out);
         std::cout<<out<<" ";
     }
     std::cout<<std::endl;

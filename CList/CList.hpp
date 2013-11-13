@@ -12,21 +12,35 @@ public:
     CList(void);
     CList(const CList<type>& object);
     ~CList(void);
+    void Destroy(void);
 
     Err_t Insert(type elem);
     Err_t Delete(type elem);
+    /***********************************************
+    *   Return the position of the element
+    ***********************************************/
     AM_S32 Search(type elem);
+    /**********************************************
+    *   This function set the m_pSearch to m_head
+    **********************************************/
+    void ResetElemNext(void);
+    /**********************************************
+    *   Get the current Elem and point to next
+    **********************************************/
+    Err_t GetElemNext(type* elem);
     BOOL IsEmpty(void) const;
-    void Destroy(void);
-    void PrintOut(void);
+    /***************************************
+    *   Return the total number in the List
+    ***************************************/
     AM_U32 CountNo(void);
     Err_t Reverse(void);
-
+    void PrintOut(void);
 public:
     CList<type>& operator=(const CList<type>& object);
 
 private:
     node_t<type>* m_head;
+    node_t<type>* m_pSearch;  //Use for search
 
 public:
     template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
@@ -37,6 +51,7 @@ template<class type>
 CList<type>::CList(void)
 {
     m_head=NULL;
+    m_pSearch=NULL;
 }
 
 template<class type>
@@ -54,7 +69,7 @@ CList<type>::CList(const CList<type>& object)
         current=object.m_head;
 
         newNode=new node_t<type>;
-        newNode->element=current.element;
+        newNode->element=current->element;
         newNode->next=NULL;
 
         m_head=newNode;
@@ -63,12 +78,16 @@ CList<type>::CList(const CList<type>& object)
         for(; current!=NULL; current=current->next)
         {
             newNode=new node_t<type>;
-            newNode->element=current.element;
+            newNode->element=current->element;
             newNode->next=NULL;
             previous->next=newNode;
             previous=previous->next;
         }
-
+    }
+    else
+    {
+        m_head=NULL;
+        m_pSearch=NULL;
     }
 
     return;
@@ -189,6 +208,40 @@ Err_t CList<type>::Delete(type elem)
 #endif /* Modify by Amos.zhu */
 }
 
+/*********************************************************************
+*
+*   Call this function before using the GetElemNext func;
+*
+**********************************************************************/
+template<class type>
+void CList<type>::ResetElemNext(void)
+{
+    m_pSearch=m_head;
+}
+/*********************************************************************
+*
+*   @Param:elem store the result
+*
+*   -------------        -------------       -------------
+*   | data | *n |   -->  | data | *n |  -->  | data | *n |  -->  .....
+*   -------------        -------------       -------------
+*     m_pSerach    --->    m_pSearch
+*  (Get this data)    (Move to next elem)
+*
+***********************************************************************/
+template<class type>
+Err_t CList<type>::GetElemNext(type* elem)
+{
+    if((this->m_pSearch==NULL)||(this->IsEmpty()))
+        return OPERATOR_FAILED;
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+
+    memcpy(elem,&m_pSearch->element,sizeof(type));
+    m_pSearch=m_pSearch->next;
+    return RETURN_SUCCESS;
+}
+
 template<class type>
 BOOL CList<type>::IsEmpty(void) const
 {
@@ -281,7 +334,6 @@ Err_t CList<type>::Reverse(void)
     }
 
     return RETURN_SUCCESS;
-
 }
 
 

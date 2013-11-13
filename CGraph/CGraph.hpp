@@ -20,6 +20,7 @@ typedef struct GRAPH_NODE_TYPE
     AM_U8 name[NAMESIZE];
     AM_U32 index;
     AM_U32 weight;
+    AM_U32 indegree;
     CList<AM_U32> adjacent_node;
 } gnode_t;
 
@@ -29,7 +30,6 @@ public:
     CGraph(void);
     CGraph(const CGraph& object);
     ~CGraph(void);
-
     void Destroy(void);
 
     /*******************************************
@@ -38,9 +38,18 @@ public:
     *   @Input: path name
     *
     *******************************************/
-    BOOL IsEmpty(void);
+    BOOL IsEmpty(void) const;
     Err_t Create(char* path);
+    Err_t TopologicalSort(gnode_t* result);
     void PrintOut(void);
+
+    /*********************************************
+    *
+    *
+    *********************************************/
+public:
+    CGraph& operator=(const CGraph& object);
+
 
 private:
     gnode_t* m_node;

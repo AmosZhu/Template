@@ -24,7 +24,7 @@ public:
 
 
     Err_t Enqueue(type elem);
-    type Dequeue(void);
+    Err_t Dequeue(type* elem);
     AM_S32 Search(type elem);
     AM_U32 CountNo(void);
     BOOL IsEmpty(void) const;
@@ -100,7 +100,8 @@ Err_t CQueue<type>::Enqueue(type elem)
         return INVALIDE_PARAMET;
 
     node_t<type>* newNode=new node_t<type>;
-    newNode->element=elem;
+    memcpy(&newNode->element,&elem,sizeof(type));
+    //newNode->element=elem;
     newNode->next=NULL;
 
     if(m_head==NULL||m_tail==NULL) //Nothing in CQueue,put the elem as first node;
@@ -117,23 +118,23 @@ Err_t CQueue<type>::Enqueue(type elem)
 
 
 template<class type>
-type CQueue<type>::Dequeue(void)
+Err_t CQueue<type>::Dequeue(type* elem)
 {
     if(this->IsEmpty())
     {
         std::cout<<"No data in this queue!"<<std::endl;
-        return NULL;
+        return OPERATOR_FAILED;
     }
 
-    type output;
     node_t<type>* current=this->m_head;
     if(m_head==m_tail)
         m_tail=NULL;
     m_head=m_head->next;
     current->next=NULL;
-    output=current->element;
+    memcpy(elem,&current->element,sizeof(type));
     delete current;
-    return output;
+
+    return RETURN_SUCCESS;
 }
 
 template<class type>

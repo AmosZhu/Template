@@ -8,7 +8,8 @@ AM_U32 data_del[] = {13,98,4,999,223};
 
 void ReverseTest(void)
 {
-    CList<AM_U32> list1,list2,list3;
+    CList<AM_U32> list1,list2;
+    CList<AM_U32> list3(list1);
     int i=0;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
     {

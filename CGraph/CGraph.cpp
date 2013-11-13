@@ -1,5 +1,10 @@
 #include "CGraph.hpp"
-#include "AmosType.hpp"
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define DB_PRINT(fmt,args...) printf("\033[33m[%s]:"fmt"\033[0m\n",__FUNCTION__,##args)
+
 
 CGraph::CGraph(void)
 {
@@ -7,11 +12,32 @@ CGraph::CGraph(void)
     m_vexno=0;
 }
 
-//Not implement yet
-#if 0
 CGraph::CGraph(const CGraph& object)
-{}
-#endif /* Modify by Amos.zhu */
+{
+    int i=0;
+    if(this == &object)
+        return;
+
+    if(!object.IsEmpty())
+    {
+        m_vexno=object.m_vexno;
+        m_node=new gnode_t[m_vexno];
+        for(i=0; i<m_vexno; i++)
+        {
+            memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
+            m_node[i].indegree=object.m_node[i].indegree;
+            m_node[i].index=object.m_node[i].index;
+            m_node[i].weight=object.m_node[i].weight;
+            m_node[i].adjacent_node=object.m_node[i].adjacent_node;
+        }
+    }
+    else
+    {
+        m_node=NULL;
+        m_vexno=0;
+    }
+    return;
+}
 
 CGraph::~CGraph(void)
 {
@@ -57,12 +83,16 @@ Err_t CGraph::Create(char* path)
         m_node=new gnode_t[m_vexno];
     }
 
+    memset(m_node,0,m_vexno*sizeof(gnode_t));
+
     for(; index<m_vexno; index++)
     {
-        fscanf(fp,"%s",m_node[index].name);
+        //fscanf(fp,"%s",m_node[index].name);
+        fscanf(fp,"%d",&m_node[index].index);
         while(fscanf(fp,"%d",&input)&&input!=-1)
         {
             m_node[index].adjacent_node.Insert(input);
+            m_node[input].indegree++;                   //caculate indegree
         }
     }
 
@@ -70,10 +100,59 @@ Err_t CGraph::Create(char* path)
     return RETURN_SUCCESS;
 }
 
-BOOL CGraph::IsEmpty(void)
+/**************************************************
+*
+*   Topological Sorting API
+*
+*   @result use to store the sort result
+*
+**************************************************/
+Err_t CGraph::TopologicalSort(gnode_t * result)
 {
-    if(!check_resource())
-        return FALSE;
+    if(result==NULL)
+        return INVALIDE_PARAMET;
+
+    CGraph dup1=*this;  //Create a duplication, due to indegree will decrease, Don not change the original data
+
+    CQueue<AM_U32> q1;
+    int i;
+    AM_U32 idx=0; //index for dup1;
+    /************************************************
+    * Search the node whose indegree was zero
+    ************************************************/
+    for(i=0; i<dup1.m_vexno; i++)
+    {
+        if(dup1.m_node[i].indegree==0)
+            q1.Enqueue(dup1.m_node[i].index);
+    }
+    /***************************************************
+    * Get the element from the queue,indegree decrease
+    ***************************************************/
+    i=0;
+    while(!q1.IsEmpty())
+    {
+        q1.Dequeue(&result[i].index); //It will cause double free,because CList in the struct
+        memcpy(&result[i],&this->m_node[result[i].index],sizeof(gnode_t));
+        dup1.m_node[result[i].index].adjacent_node.ResetElemNext(); //Reset pointer before get next element
+        while(dup1.m_node[result[i].index].adjacent_node.GetElemNext(&idx)==RETURN_SUCCESS)
+        {
+            dup1.m_node[idx].indegree--;
+            if(dup1.m_node[idx].indegree==0)
+                q1.Enqueue(dup1.m_node[idx].index);
+        }
+        i++;
+    }
+    if(i!=dup1.m_vexno)
+    {
+        std::cout<<"Graph has a cycle!"<<std::endl;
+        return OPERATOR_FAILED;
+    }
+
+    return RETURN_SUCCESS;
+}
+
+BOOL CGraph::IsEmpty(void) const
+{
     if(this->m_vexno==0)
         return TRUE;
     return FALSE;
@@ -90,11 +169,11 @@ void CGraph::PrintOut(void)
     AM_U32 index=0;
     for(; index<this->m_vexno; index++)
     {
-        std::cout<<"Node "<<index<<": ";
+        std::cout<<"Node "<<m_node[index].index<<": ";
         std::cout<<this->m_node[index].adjacent_node;
-        std::cout<<"In Degree: ";
+        std::cout<<"In Degree: "<<this->m_node[index].indegree<<std::endl;
         std::cout<<"Out Degree: ";
-        std::cout<<std::endl;
+        std::cout<<std::endl<<std::endl;
     }
 
 }
@@ -108,5 +187,32 @@ BOOL CGraph::check_resource(void)
     }
 
     return TRUE;
+}
+
+CGraph& CGraph::operator=(const CGraph& object)
+{
+    int i=0;
+    if(this == &object)
+        return *this;
+
+    if(!object.IsEmpty())
+    {
+        m_vexno=object.m_vexno;
+        m_node=new gnode_t[m_vexno];
+        for(i=0; i<m_vexno; i++)
+        {
+            memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
+            m_node[i].indegree=object.m_node[i].indegree;
+            m_node[i].index=object.m_node[i].index;
+            m_node[i].weight=object.m_node[i].weight;
+            m_node[i].adjacent_node=object.m_node[i].adjacent_node;
+        }
+    }
+    else
+    {
+        m_node=NULL;
+        m_vexno=0;
+    }
+    return *this;
 }
 

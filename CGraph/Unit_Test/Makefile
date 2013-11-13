@@ -20,7 +20,7 @@ TARGET = GraphTest
 
 $(TARGET):
 	cd .. && $(MAKE)
-	$(CC) -c $(CFLAGS) $(SRCS)
+	$(CC) -c -g $(CFLAGS) $(SRCS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@
 
 clean:
