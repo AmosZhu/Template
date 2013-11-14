@@ -3,5 +3,5 @@
 
 int main(void)
 {
-    CGraph_TopoSortTest();
+    CGraph_UnweightedTest();
 }

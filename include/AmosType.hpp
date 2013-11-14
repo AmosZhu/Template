@@ -7,6 +7,7 @@
 #define BOOL int
 #define FALSE (0)
 #define TRUE (1)
+#define INFINITY (-1)
 
 
 typedef enum ERROR_TYPE
