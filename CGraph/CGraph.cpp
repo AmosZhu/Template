@@ -26,7 +26,6 @@ CGraph::CGraph(const CGraph& object)
             memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
             m_node[i].indegree=object.m_node[i].indegree;
             m_node[i].index=object.m_node[i].index;
-            m_node[i].weight=object.m_node[i].weight;
             m_node[i].adjacent_node=object.m_node[i].adjacent_node;
         }
     }
@@ -65,9 +64,24 @@ Err_t CGraph::Create(char* path)
     FILE* fp;
     AM_U32 index=0;
     AM_U32 input=0;
-
+    char buf[MAXLINE];
+    char* ret;
+    AM_U32 type;
+    gvertex_t temp;
     if((fp=fopen(path,"rb"))==NULL)
         return RESOURCE_UNAVAILABLE;
+
+    /*******************************
+    *   Read the vertex type
+    *******************************/
+    if(fscanf(fp,"%s",buf)<0)
+        return FILEDATA_CORRUPT;
+    ret=strchr(buf,'=');
+    ret++;
+    if(strcmp(ret,"UNWEIGHTED")==0)
+        type=UNWEIGHTED;
+    else if(strcmp(ret,"WEIGHTED")==0)
+        type=WEIGHTED;
 
     /*******************************
     *
@@ -90,8 +104,24 @@ Err_t CGraph::Create(char* path)
         fscanf(fp,"%d",&m_node[index].index);
         while(fscanf(fp,"%d",&input)&&input!=-1)
         {
-            m_node[index].adjacent_node.Insert(input);
             m_node[input].indegree++;                   //caculate indegree
+            temp.index=input;
+            switch(type)
+            {
+                case UNWEIGHTED:
+                {
+                    temp.weight=1;
+                }
+                break;
+                case WEIGHTED:
+                {
+                    if(fscanf(fp,"%d",&input)&&input!=-1)
+                    {
+                        temp.weight=input;
+                    }
+                }
+            }
+            m_node[index].adjacent_node.Insert(temp);
         }
     }
 
@@ -115,7 +145,7 @@ Err_t CGraph::TopologicalSort(gnode_t * result)
 
     CQueue<AM_U32> q1;
     int i;
-    AM_U32 idx=0; //index for dup1;
+    gvertex_t w; //index for dup1;
     /************************************************
     * Search the node whose indegree was zero
     ************************************************/
@@ -133,11 +163,11 @@ Err_t CGraph::TopologicalSort(gnode_t * result)
         q1.Dequeue(&result[i].index); //It will cause double free,because CList in the struct
         memcpy(&result[i],&this->m_node[result[i].index],sizeof(gnode_t));
         dup1.m_node[result[i].index].adjacent_node.ResetElemNext(); //Reset pointer before get next element
-        while(dup1.m_node[result[i].index].adjacent_node.GetElemNext(&idx)==RETURN_SUCCESS)
+        while(dup1.m_node[result[i].index].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
         {
-            dup1.m_node[idx].indegree--;
-            if(dup1.m_node[idx].indegree==0)
-                q1.Enqueue(dup1.m_node[idx].index);
+            dup1.m_node[w.index].indegree--;
+            if(dup1.m_node[w.index].indegree==0)
+                q1.Enqueue(dup1.m_node[w.index].index);
         }
         i++;
     }
@@ -168,9 +198,9 @@ void CGraph::PrintTopoSortResult(gnode_t* result,AM_U32 size)
 
 
 
-/***********************************************************************
+/*************************************************************************
 *
-*       This is the table use to store the data of outweighted
+*       This is the table use to store the data of weighted & unweighted
 *       shortest path.
 *
 *                   infinity=-1
@@ -196,14 +226,14 @@ void CGraph::PrintTopoSortResult(gnode_t* result,AM_U32 size)
 /*********************************************************************
 *
 *   w is the adjacent node of v;
-*   @The table to store the result of the outweighted shortest path
-*
+*   @The table to store the result of the unweighted shortest path
+*   @The unweighted path's value is one
 **********************************************************************/
-Err_t CGraph::OutWeightShortestPath(AM_U32 start,gtable_t* table)
+Err_t CGraph::UnWeightShortestPath(AM_U32 start,gtable_t* table)
 {
     AM_U32 currDist=0;
-    AM_U32 v;
-    AM_U32 w;
+    AM_U32 v;  //use index only
+    gvertex_t w;
     CQueue<AM_U32> q1;
     if((table==NULL)||(IsEmpty()))
         return OPERATOR_FAILED;
@@ -221,19 +251,69 @@ Err_t CGraph::OutWeightShortestPath(AM_U32 start,gtable_t* table)
         m_node[v].adjacent_node.ResetElemNext();
         while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
         {
-            if(table[w].distance==INFINITY)
+            if(table[w.index].distance==INFINITY)
             {
-                table[w].distance=currDist+1;
-                table[w].preVertex=v;
-                q1.Enqueue(w);
+                table[w.index].distance=currDist+1;
+                table[w.index].preVertex=v;
+                q1.Enqueue(w.index);
             }
         }
     }
     return RETURN_SUCCESS;
 }
 
+
+/*********************************************************************
+*
+*   w is the adjacent node of v;
+*   @The table to store the result of the weighted shortest path
+*
+**********************************************************************/
+Err_t CGraph::WeightShortestPath(AM_U32 start,gtable_t* table)
+{
+    AM_S32 currDist=INFINITY;
+    AM_U32 v;  //use index only
+    gvertex_t w;
+    AM_U32 i; //Use for loop
+    AM_U32 loopNum=0;
+    if((table==NULL)||(IsEmpty()))
+        return OPERATOR_FAILED;
+
+    table_init(table);
+
+    table[start].distance=0;
+
+    for(loopNum=0; loopNum<m_vexno; loopNum++)
+    {
+        currDist=INFINITY;
+        for(i=0; i<m_vexno; i++)  //Search the smallest unknown distance
+        {
+            if((table[i].know!=TRUE)&&(table[i].distance!=INFINITY)&&(table[i].distance<currDist))
+            {
+                v=i;
+                currDist=table[i].distance;
+            }
+        }
+
+        table[v].know=TRUE;
+        m_node[v].adjacent_node.ResetElemNext();
+        while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        {
+            if(table[w.index].know!=TRUE)
+            {
+                if(table[w.index].distance>currDist+w.weight)
+                {
+                    table[w.index].distance=currDist+w.weight;
+                    table[w.index].preVertex=v;
+                }
+            }
+        }
+    }
+}
+
+
 /************************************************
-*   This function used for unweighted path yet
+*   This function used for shortest path yet
 ************************************************/
 void CGraph::PrintShortestPath(gtable_t* table,AM_U32 size)
 {
@@ -262,27 +342,30 @@ void CGraph::PrintShortestPath(gtable_t* table,AM_U32 size)
         }
     }
 
-    std::cout<<"+++++++++++++++++++++++++++++++++++++++"<<std::endl;
+    std::cout<<"+++++++++++++++++++++++++++++++++++++++++"<<std::endl;
     std::cout<<std::right;
     std::cout<<"|"<<std::setw(7)<<"Vertex"<<std::setw(2)<<"|";
     std::cout<<std::setw(6)<<"know"<<std::setw(3)<<"|";
-    std::cout<<std::setw(9)<<"Distance"<<std::setw(2)<<"|";
+    std::cout<<std::setw(10)<<"Distance"<<std::setw(3)<<"|";
     std::cout<<std::setw(6)<<"Path"<<std::setw(3)<<"|"<<std::endl;
-    std::cout<<"======================================="<<std::endl;
+    std::cout<<"========================================="<<std::endl;
     for(i=0; i<m_vexno; i++)
     {
         std::cout<<std::right;
         std::cout<<"|"<<std::setw(4)<<"V"<<i<<std::setw(4)<<"|";
         std::cout<<std::setw(4)<<std::boolalpha<<table[i].know<<std::setw(5)<<"|";
-        std::cout<<std::setw(6)<<table[i].distance<<std::setw(5)<<"|";
+        if(table[i].distance==INFINITY)
+            std::cout<<std::setw(10)<<"INFINITY"<<std::setw(3)<<"|";
+        else
+            std::cout<<std::setw(7)<<table[i].distance<<std::setw(6)<<"|";
         if(table[i].preVertex==DISTANCESELF)
             std::cout<<std::setw(6)<<"Self"<<std::setw(3)<<"|"<<std::endl;
         else
             std::cout<<std::setw(4)<<"V"<<std::left<<std::setw(4)<<table[i].preVertex<<std::right<<std::setw(1)<<"|"<<std::endl;
     }
-    std::cout<<"+++++++++++++++++++++++++++++++++++++++"<<std::endl;
+    std::cout<<"+++++++++++++++++++++++++++++++++++++++++"<<std::endl;
     std::cout<<std::endl;
-    std::cout<<"CAUTION: If the distance was -1, it present there no valid path from the start point to this point!"<<std::endl;
+    std::cout<<"CAUTION: If the distance was INFINITY, it present there no valid path from the start point to this point!"<<std::endl;
     std::cout<<std::endl;
     for(i=0; i<m_vexno; i++)
     {
@@ -324,10 +407,16 @@ void CGraph::PrintOut(void)
     }
 
     AM_U32 index=0;
+    gvertex_t v;
     for(; index<this->m_vexno; index++)
     {
+        m_node[index].adjacent_node.ResetElemNext();
         std::cout<<"Node "<<m_node[index].index<<": ";
-        std::cout<<this->m_node[index].adjacent_node;
+        while(m_node[index].adjacent_node.GetElemNext(&v)==RETURN_SUCCESS)
+        {
+            std::cout<<v.index<<":"<<v.weight<<"  ";
+        }
+        std::cout<<std::endl;
         std::cout<<"In Degree: "<<this->m_node[index].indegree<<std::endl;
         std::cout<<"Out Degree: ";
         std::cout<<std::endl<<std::endl;
@@ -372,7 +461,6 @@ CGraph& CGraph::operator=(const CGraph& object)
             memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
             m_node[i].indegree=object.m_node[i].indegree;
             m_node[i].index=object.m_node[i].index;
-            m_node[i].weight=object.m_node[i].weight;
             m_node[i].adjacent_node=object.m_node[i].adjacent_node;
         }
     }

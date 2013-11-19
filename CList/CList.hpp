@@ -106,7 +106,7 @@ Err_t CList<type>::Insert(type elem)
         return INVALIDE_PARAMET;
 
     node_t<type>* newNode=new node_t<type>;
-    newNode->element=elem;
+    memcpy(&newNode->element,&elem,sizeof(type));
     newNode->next=NULL;
 
     if(m_head!=NULL) //Nothing in CList,put the elem as first node;

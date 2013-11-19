@@ -3,5 +3,6 @@
 
 int main(void)
 {
+    CGraph_WeightedTest();
     CGraph_UnweightedTest();
 }

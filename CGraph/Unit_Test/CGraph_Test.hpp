@@ -4,6 +4,7 @@
 void CGraph_CreateTest(void);
 void CGraph_TopoSortTest(void);
 void CGraph_UnweightedTest(void);
+void CGraph_WeightedTest(void);
 
 
 #endif

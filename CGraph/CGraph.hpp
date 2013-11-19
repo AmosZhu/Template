@@ -16,13 +16,24 @@
 #define NAMESIZE 100
 #define DISTANCESELF -1000
 
+/************************
+*   Graph type
+************************/
+#define UNWEIGHTED 1
+#define WEIGHTED 2
+
+typedef struct GRAPH_VERTEX_TYPE
+{
+    AM_U32 index;
+    AM_S32 weight;
+}gvertex_t;
+
 typedef struct GRAPH_NODE_TYPE
 {
     AM_U8 name[NAMESIZE];
     AM_U32 index;
-    AM_U32 weight;
     AM_U32 indegree;
-    CList<AM_U32> adjacent_node;
+    CList<gvertex_t> adjacent_node;
 } gnode_t;
 
 typedef struct GRAPH_TABLE_TYPE
@@ -65,11 +76,12 @@ public:
     *********************************************/
     AM_U32 CountNo(void);
     /*****************************************************
-    * This pair of function get outweighted shortest path,
-    * And the result can be print out by the
+    * This pair of function get unweighted & weighted
+    * shortest path,And the result can be print out by the
     * print function.
     ******************************************************/
-    Err_t OutWeightShortestPath(AM_U32 start,gtable_t* table);
+    Err_t UnWeightShortestPath(AM_U32 start,gtable_t* table);
+    Err_t WeightShortestPath(AM_U32 start,gtable_t* table);
     void PrintShortestPath(gtable_t* table,AM_U32 size);
 public:
     CGraph& operator=(const CGraph& object);

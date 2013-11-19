@@ -1,3 +1,5 @@
+GRAPH_TYPE=UNWEIGHTED
+
 9
 0 1 4 -1
 1 5 -1
