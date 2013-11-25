@@ -2,6 +2,7 @@
 #define _AMOS_CLIST_H
 
 #include <iostream>
+#include <string.h>
 #include "AmosType.hpp"
 
 
@@ -41,6 +42,7 @@ public:
 private:
     node_t<type>* m_head;
     node_t<type>* m_pSearch;  //Use for search
+    AM_U32 count; //Number of elements;
 
 public:
     template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
@@ -52,6 +54,7 @@ CList<type>::CList(void)
 {
     m_head=NULL;
     m_pSearch=NULL;
+    count=0;
 }
 
 template<class type>
@@ -59,6 +62,10 @@ CList<type>::CList(const CList<type>& object)
 {
     if(this==&object)
         return;
+
+    m_head=NULL;
+    m_pSearch=NULL;
+    count=0;
 
     if(!object.IsEmpty())
     {
@@ -75,6 +82,7 @@ CList<type>::CList(const CList<type>& object)
         m_head=newNode;
         previous=m_head;
         current=current->next;
+        count=object.count;
         for(; current!=NULL; current=current->next)
         {
             newNode=new node_t<type>;
@@ -83,11 +91,6 @@ CList<type>::CList(const CList<type>& object)
             previous->next=newNode;
             previous=previous->next;
         }
-    }
-    else
-    {
-        m_head=NULL;
-        m_pSearch=NULL;
     }
 
     return;
@@ -115,6 +118,7 @@ Err_t CList<type>::Insert(type elem)
     }
 
     m_head=newNode;
+    count++;
     return RETURN_SUCCESS;
 }
 
@@ -159,6 +163,7 @@ Err_t CList<type>::Delete(type elem)
         m_head=m_head->next;
         delete current;
         current=NULL;
+        count--;
         return RETURN_SUCCESS;
     }
     while(!found&&current!=NULL)
@@ -203,6 +208,7 @@ Err_t CList<type>::Delete(type elem)
         temp->next=NULL;
     }
     delete current;
+    count--;
     return RETURN_SUCCESS;
 
 #endif /* Modify by Amos.zhu */
@@ -254,6 +260,7 @@ BOOL CList<type>::IsEmpty(void) const
 template<class type>
 AM_U32 CList<type>::CountNo(void)
 {
+#if 0
     AM_U32 count=0;
     node_t<type>* current;
     if(!this->IsEmpty())
@@ -265,6 +272,7 @@ AM_U32 CList<type>::CountNo(void)
             current=current->next;
         }
     }
+#endif /* Modify by Amos.zhu */
     return count;
 }
 
@@ -283,6 +291,8 @@ void CList<type>::Destroy(void)
         delete current;
     }
     this->m_head=NULL;
+    count=0;
+    m_pSearch=NULL;
     return;
 }
 
@@ -343,6 +353,10 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
     if(this==&object)
         return *this;
 
+    m_head=NULL;
+    m_pSearch=NULL;
+    count=0;
+
     if(!object.IsEmpty())
     {
         node_t<type>* current;
@@ -358,6 +372,8 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
         m_head=newNode;
         previous=m_head;
         current=current->next;
+        count=object.count;
+
         for(; current!=NULL; current=current->next)
         {
             newNode=new node_t<type>;

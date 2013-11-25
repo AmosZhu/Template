@@ -19,7 +19,7 @@ void ReverseTest(void)
     list3=list2=list1;
     std::cout<<"list3: "<<list3;
     std::cout<<"list2: "<<list2;
-    for(i=0; i<10; i++)
+    for(i=0; i<list1.CountNo(); i++)
     {
         list1.Reverse();
         std::cout<<list1;
