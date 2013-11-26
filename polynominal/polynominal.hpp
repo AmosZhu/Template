@@ -28,6 +28,7 @@ typedef struct POLYNOMINAL_TYPE
 
 
 AM_U32 processDigit(char* fmt);
-void polynominalProcess(char* buf,CList<polynominal_t>* equation);
+Err_t polynominalInput(char* buf,CList<polynominal_t>* equation);
+Err_t polynominalAdd(CList<polynominal_t>* input1,CList<polynominal_t>* input2,CList<polynominal_t>* output);
 
 #endif
