@@ -7,9 +7,16 @@
 #define BOOL int
 #define FALSE (0)
 #define TRUE (1)
+
+#ifdef INFINITY
+#undef INFINITY
+#endif
+
 #define INFINITY (0x7FFFFFFF)
 
+
 #define MAXLINE 1024
+#define BUFSIZE 512
 
 
 typedef enum ERROR_TYPE
