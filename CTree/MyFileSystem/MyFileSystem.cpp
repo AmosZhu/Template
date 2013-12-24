@@ -32,14 +32,14 @@
     node->nextSibling=NULL;\
     memcpy(node->elem.name,dirp->d_name,NAMESIZE);\
     if(lstat(fullPath,&statbuf)==-1){\
-        printf("open root path failed, reason : %s\n",strerror(errno));\
+        printf("open  fullpath failed, reason : %s\n",strerror(errno));\
         return OPERATOR_FAILED;\
     }\
     if(S_ISDIR(statbuf.st_mode))\
         node->elem.type=DIRECTORY;\
     else\
         node->elem.type=NORMALFILE;\
-
+ 
 /******************************************************
 *                   Global variable
 ******************************************************/
@@ -95,16 +95,21 @@ Err_t CreateFileSystem(char* filePath)
 
     dopath(fileSystem,rootn);
 
+	/*
+	 *	Lastly,print out;
+	 */
+
+	fileSystem->PreOrderTraversal();
     return RETURN_SUCCESS;
 
 }
 
-void PrintOut(TreeNode_t<file_t> node)
+void PrintOut(file_t node)
 {
-    std::cout<<node.elem.name;
-    if(node.elem.type==NORMALFILE)
+    std::cout<<node.name;
+    if(node.type==NORMALFILE)
         std::cout<<"*"<<std::endl;
-    else if(node.elem.type==DIRECTORY)
+    else if(node.type==DIRECTORY)
         std::cout<<"/"<<std::endl;
 }
 
@@ -131,33 +136,45 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
     *fileName++='/';
     *fileName=0;
 
+
     if((dp=opendir(fullPath))==NULL)
         return OPERATOR_FAILED;
 
     /*
-    *   Add first child;
+    *   Add first child,and ignore the . and ..
     */
-    if((dirp=readdir(dp))!=NULL)
+
+    while((dirp=readdir(dp))!=NULL)
     {
+		if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
+			continue;
+
         strcpy(fileName,dirp->d_name);
         CREATE_NEWNODE(child,dirp,statbuf,fullPath);
-        fileName[-1]=0;
         fileSystem->AddFirstChild(current,child);
         current=child; /*Make current point to first child*/
+        if(S_ISDIR(statbuf.st_mode))
+            dopath(fileSystem,current);
+		break;
     }
 
     /*
     *   Do recursive and add sibling;
     */
+
     while((dirp=readdir(dp))!=NULL)
     {
+		if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
+			continue;
         strcpy(fileName,dirp->d_name);
         CREATE_NEWNODE(sibling,dirp,statbuf,fullPath);
         fileSystem->AddNextSibling(current,sibling);
         current=sibling; /*Make current point to next sibling*/
         if(S_ISDIR(statbuf.st_mode))
             dopath(fileSystem,current);
-        fileName[-1]=0;
     }
+    fileName[-1]=0;
+	
+        return RETURN_SUCCESS;
 }
 

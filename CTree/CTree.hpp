@@ -9,6 +9,7 @@
 ******************************************/
 
 #include "AmosType.hpp"
+#include <iostream>
 
 template<typename type>
 struct TreeNode_t
@@ -24,7 +25,7 @@ class CTree
 {
 public:
     CTree(void);
-    CTree(void (*func)(TreeNode_t<type>));
+    CTree(void (*func)(type));
     CTree(const CTree<type>* object);
     ~CTree(void);
 
@@ -33,12 +34,19 @@ public:
     Err_t AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* pNext);
     Err_t SetRoot(TreeNode_t<type>* pRoot);
 
+    BOOL IsEmpty(void);
+    void PreOrderTraversal(void);
+
+
+private:
+    void preOrder(TreeNode_t<type>* current,AM_U32 height);
+
 private:
     TreeNode_t<type>* root;
     /*
     *   print pointer here
     */
-    void (*printNode)(TreeNode_t<type>);
+    void (*printNode)(type);
 
 };
 
@@ -50,8 +58,9 @@ CTree<type>::CTree(void)
 }
 
 template<class type>
-CTree<type>::CTree(void (*func)(TreeNode_t<type>))
+CTree<type>::CTree(void (*func)(type))
 {
+	root=NULL;
     printNode=func;
 }
 
@@ -99,5 +108,47 @@ Err_t CTree<type>::AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* p
     pCurrent->nextSibling=pNext;
     return RETURN_SUCCESS;
 }
+
+template<class type>
+BOOL CTree<type>::IsEmpty(void)
+{
+    if(root==NULL)
+        return TRUE;
+
+    return FALSE;
+}
+
+template<class type>
+void CTree<type>::PreOrderTraversal(void)
+{
+    if(IsEmpty())
+        return;
+
+    preOrder(root,0);
+}
+
+template<class type>
+void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
+{
+    AM_U32 count=0;
+	AM_U32 nextHeight=0;
+    if(current==NULL)
+        return;
+
+    for(count=0;count<height;count++)
+        std::cout<<"	";
+
+	if(printNode!=NULL)
+	{
+		//printf("height:%d:",height);
+		printNode(current->elem);
+	}
+	nextHeight=height+1;
+    preOrder(current->firstChild,nextHeight);
+    preOrder(current->nextSibling,height);
+
+    return;
+}
+
 
 #endif
