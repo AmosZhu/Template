@@ -35,12 +35,13 @@ public:
     Err_t AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* pNext);
     Err_t SetRoot(TreeNode_t<type>* pRoot);
 
-    BOOL IsEmpty(void);
+    BOOL IsEmpty(void) const;
     void PreOrderTraversal(void);
 
 
 private:
     void preOrder(TreeNode_t<type>* current,AM_U32 height);
+    void copyTree(TreeNode_t<type>* dst,TreeNode_t<type>* src);
 
 private:
     TreeNode_t<type>* root;
@@ -68,10 +69,12 @@ CTree<type>::CTree(void (*func)(type))
 template<class type>
 CTree<type>::CTree(const CTree<type>* object)
 {
+#if 0
     CStack<TreeNode_t<type> > srcStack,dstStack;
     TreeNode_t<type>* newNode;
     TreeNode_t<type>* src;
     TreeNode_t<type>* dst;
+#endif /* Modify by Amos.zhu */
 
     if((object==NULL)||(object->IsEmpty()))
     {
@@ -80,10 +83,15 @@ CTree<type>::CTree(const CTree<type>* object)
         return;
     }
 
+    printNode=object->printNode;
     /*
     *   Process root first;
     */
 
+    copyTree(root,object->root);
+
+    return;
+#if 0
     src=object->root;
     newNode=new TreeNode_t<type>;
     memcpy(newNode,src,sizeof(TreeNode_t<type>));
@@ -117,6 +125,7 @@ CTree<type>::CTree(const CTree<type>* object)
 
     }
 
+#endif /* Modify by Amos.zhu */
 
 }
 
@@ -158,7 +167,7 @@ Err_t CTree<type>::AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* p
 }
 
 template<class type>
-BOOL CTree<type>::IsEmpty(void)
+BOOL CTree<type>::IsEmpty(void) const
 {
     if(root==NULL)
         return TRUE;
@@ -188,7 +197,6 @@ void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
 
     if(printNode!=NULL)
     {
-        //printf("height:%d:",height);
         printNode(current->elem);
     }
     nextHeight=height+1;
@@ -196,6 +204,26 @@ void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
     preOrder(current->nextSibling,height);
 
     return;
+}
+
+template<class type>
+void CTree<type>::copyTree(TreeNode_t<type>* dst,TreeNode_t<type>* src)
+{
+    TreeNode_t<type>* newNode;
+    if(src==NULL)
+    {
+        dst=NULL;
+        return;
+    }
+    static int i=0;
+    i++;
+    printf("%d\n",i);
+    if(printNode!=NULL)
+        printNode(src->elem);
+    dst=new TreeNode_t<type>;
+    memcpy(&dst->elem,&src->elem,sizeof(type));
+    copyTree(dst->firstChild,src->firstChild);
+    copyTree(dst->nextSibling,src->nextSibling);
 }
 
 

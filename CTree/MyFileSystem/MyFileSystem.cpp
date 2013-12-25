@@ -111,7 +111,10 @@ Err_t CreateFileSystem(char* filePath)
      *  Lastly,print out;
      */
 
-    fileSystem->PreOrderTraversal();
+    //fileSystem->PreOrderTraversal();
+
+    CTree<file_t>fileSystem1(fileSystem);
+    fileSystem1.PreOrderTraversal();
     return RETURN_SUCCESS;
 
 }
