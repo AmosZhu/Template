@@ -3,7 +3,7 @@ LIBS =
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../../include/ \
 				../../CTree/   \
-				./
+				../../CStack/
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 

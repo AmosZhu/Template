@@ -20,5 +20,7 @@ typedef struct MY_FILENODE_TYPE
 
 Err_t CreateFileSystem(char* filePath);
 void PrintOut(file_t node);
+char* getPath(const char* path);
+
 
 #endif

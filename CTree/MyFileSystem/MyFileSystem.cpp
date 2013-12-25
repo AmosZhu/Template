@@ -1,6 +1,6 @@
 /*******************************************************
 *
-*   This file implement a virtual file system
+*   This file simulate a file system
 *
 *******************************************************/
 
@@ -39,7 +39,16 @@
         node->elem.type=DIRECTORY;\
     else\
         node->elem.type=NORMALFILE;\
- 
+
+
+#define COPY_NAME(src,dst) \
+    AM_U32 dstNameLen=strlen(dst);\
+    if(dstNameLen>NAMESIZE) {\
+        printf("[%d]:Copy name too big\n",__LINE__);\
+        return OPERATOR_FAILED;}\
+    strcpy(src,dst);\
+    src[dstNameLen]=0;
+
 /******************************************************
 *                   Global variable
 ******************************************************/
@@ -56,6 +65,7 @@ Err_t CreateFileSystem(char* filePath)
     CTree<file_t>* fileSystem;
     struct stat statbuf;
     TreeNode_t<file_t>* rootn; /*root node*/
+    char* abPath; /*Absolute Path*/
 
     if(filePath==NULL)
         return INVALIDE_PARAMET;
@@ -65,6 +75,8 @@ Err_t CreateFileSystem(char* filePath)
     */
     memset(fullPath,0,MAXLINE);
     strcpy(fullPath,filePath);
+
+    abPath=getPath(filePath);
 
     fileSystem=new CTree<file_t>(PrintOut);
     /*
@@ -84,7 +96,7 @@ Err_t CreateFileSystem(char* filePath)
         rootn->elem.type=DIRECTORY;
     else
         rootn->elem.type=NORMALFILE;
-    memcpy(rootn->elem.name,filePath,NAMESIZE);
+    COPY_NAME(rootn->elem.name,abPath);
 
     fileSystem->SetRoot(rootn);
 
@@ -95,11 +107,11 @@ Err_t CreateFileSystem(char* filePath)
 
     dopath(fileSystem,rootn);
 
-	/*
-	 *	Lastly,print out;
-	 */
+    /*
+     *  Lastly,print out;
+     */
 
-	fileSystem->PreOrderTraversal();
+    fileSystem->PreOrderTraversal();
     return RETURN_SUCCESS;
 
 }
@@ -130,13 +142,16 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
     if(ptr->elem.type==NORMALFILE)  /*We do not need to process the normal file*/
         return RETURN_SUCCESS;
 
+
     current=ptr;
 
     fileName=fullPath+strlen(fullPath);
     *fileName++='/';
     *fileName=0;
 
-
+    /*
+    *   Only directory can run here,check again.
+    */
     if((dp=opendir(fullPath))==NULL)
         return OPERATOR_FAILED;
 
@@ -146,16 +161,16 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
 
     while((dirp=readdir(dp))!=NULL)
     {
-		if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
-			continue;
+        if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
+            continue;
 
-        strcpy(fileName,dirp->d_name);
+        COPY_NAME(fileName,dirp->d_name);
         CREATE_NEWNODE(child,dirp,statbuf,fullPath);
         fileSystem->AddFirstChild(current,child);
         current=child; /*Make current point to first child*/
         if(S_ISDIR(statbuf.st_mode))
             dopath(fileSystem,current);
-		break;
+        break;
     }
 
     /*
@@ -164,9 +179,9 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
 
     while((dirp=readdir(dp))!=NULL)
     {
-		if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
-			continue;
-        strcpy(fileName,dirp->d_name);
+        if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
+            continue;
+        COPY_NAME(fileName,dirp->d_name);
         CREATE_NEWNODE(sibling,dirp,statbuf,fullPath);
         fileSystem->AddNextSibling(current,sibling);
         current=sibling; /*Make current point to next sibling*/
@@ -174,7 +189,26 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
             dopath(fileSystem,current);
     }
     fileName[-1]=0;
-	
-        return RETURN_SUCCESS;
+
+    return RETURN_SUCCESS;
 }
 
+
+/********************************************************************
+*
+*   Get the path's obslute path
+*
+*********************************************************************/
+char* getPath(const char* path)
+{
+    char* currentPath;
+    char* buffer=(char*)malloc(sizeof(char)*BUFSIZE);
+    if(path==NULL)
+        return NULL;
+
+    currentPath=getcwd(NULL,0);
+    chdir(path);
+    buffer=getcwd(NULL,0);
+    chdir(currentPath);
+    return buffer;
+}

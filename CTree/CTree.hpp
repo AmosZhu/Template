@@ -9,6 +9,7 @@
 ******************************************/
 
 #include "AmosType.hpp"
+#include "CStack.hpp"
 #include <iostream>
 
 template<typename type>
@@ -60,16 +61,63 @@ CTree<type>::CTree(void)
 template<class type>
 CTree<type>::CTree(void (*func)(type))
 {
-	root=NULL;
+    root=NULL;
     printNode=func;
 }
 
 template<class type>
 CTree<type>::CTree(const CTree<type>* object)
 {
+    CStack<TreeNode_t<type> > srcStack,dstStack;
+    TreeNode_t<type>* newNode;
+    TreeNode_t<type>* src;
+    TreeNode_t<type>* dst;
+
+    if((object==NULL)||(object->IsEmpty()))
+    {
+        root=NULL;
+        printNode=NULL;
+        return;
+    }
+
     /*
-    *   Not implement yet
+    *   Process root first;
     */
+
+    src=object->root;
+    newNode=new TreeNode_t<type>;
+    memcpy(newNode,src,sizeof(TreeNode_t<type>));
+    newNode->firstChild=NULL;
+    newNode->nextSibling=NULL;
+    dst=this->root=newNode;
+
+    srcStack.PushNoCopy(&src); /* Save the address of the pointer */
+    dstStack.PushNoCopy(&dst);
+
+    /*
+    *   Begin Construct a tree
+    */
+
+    while(!srcStack.IsEmpty())
+    {
+        srcStack.PopNoCopy(&src);
+        dstStack.PopNoCopy(&dst);
+
+        if(src->nextSibling!=NULL)
+        {
+            newNode=new TreeNode_t<type>;
+            memcpy(newNode,src->nextSibling,sizeof(TreeNode_t<type>));
+            newNode->firstChild=NULL;
+            newNode->nextSibling=NULL;
+            dst->nextSibling=newNode;
+            src=src->nextSibling;
+            dst=dst->nextSibling;
+        }
+
+
+    }
+
+
 }
 
 template<class type>
@@ -131,19 +179,19 @@ template<class type>
 void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
 {
     AM_U32 count=0;
-	AM_U32 nextHeight=0;
+    AM_U32 nextHeight=0;
     if(current==NULL)
         return;
 
-    for(count=0;count<height;count++)
+    for(count=0; count<height; count++)
         std::cout<<"	";
 
-	if(printNode!=NULL)
-	{
-		//printf("height:%d:",height);
-		printNode(current->elem);
-	}
-	nextHeight=height+1;
+    if(printNode!=NULL)
+    {
+        //printf("height:%d:",height);
+        printNode(current->elem);
+    }
+    nextHeight=height+1;
     preOrder(current->firstChild,nextHeight);
     preOrder(current->nextSibling,height);
 

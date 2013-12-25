@@ -44,6 +44,11 @@ public:
 
     Err_t Push(type* elem);
     Err_t Pop(type* elem);
+
+    Err_t PushNoCopy(type* elem);
+    Err_t PopNoCopy(type* elem);
+
+
     Err_t Top(type* elem);
 
     AM_U32 Size(void);
@@ -144,6 +149,47 @@ Err_t CStack<type>::Push(type* elem)
 
     return RETURN_SUCCESS;
 }
+
+template<class type>
+Err_t CStack<type>::PushNoCopy(type* elem)
+{
+    node_t<type>* newNode;
+
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+    newNode=new node_t<type>;
+    newNode->next=m_head;
+    memcpy(&newNode->element,elem,sizeof(type*));
+    m_head=newNode;
+
+    count++;  //Use to count the number of elements
+    size+=sizeof(node_t<type*>); //Use to count the stack size;
+
+    return RETURN_SUCCESS;
+}
+
+template<class type>
+Err_t CStack<type>::PopNoCopy(type* elem)
+{
+    node_t<type>* current;
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+    if(IsEmpty())
+        return RESOURCE_UNAVAILABLE;
+
+    current=m_head;
+    m_head=m_head->next;
+    memcpy(elem,&current->element,sizeof(type*));
+    if(current!=NULL)
+        delete current;
+    current=NULL;
+
+    count--;
+    size-=sizeof(node_t<type>*);
+
+    return RETURN_SUCCESS;
+}
+
 
 template<class type>
 Err_t CStack<type>::Pop(type* elem)
