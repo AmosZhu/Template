@@ -5,7 +5,7 @@
 #include "CTree.hpp"
 
 
-#define NAMESIZE 64
+#define NAMESIZE 256
 
 
 /*****************************************************
@@ -18,9 +18,32 @@ typedef struct MY_FILENODE_TYPE
 } file_t;
 
 
-Err_t CreateFileSystem(char* filePath);
-void PrintOut(file_t node);
-char* getPath(const char* path);
+class CFileSystem
+{
+public:
+    CFileSystem(void);
+    CFileSystem(const char* path);
+    CFileSystem(const CFileSystem& object);
+    ~CFileSystem(void);
+
+public:
+    Err_t Create(const char* path);
+    void PrintOut(void);
+
+public:
+    const CFileSystem& operator=(const CFileSystem& object);
+
+
+private:
+    Err_t dopath(TreeNode_t<file_t>* ptr);
+    Err_t createFileSystem(const char* path);
+
+
+private:
+    CTree<file_t>* m_sysTree;
+    char m_fullPath[MAXLINE];
+
+};
 
 
 #endif

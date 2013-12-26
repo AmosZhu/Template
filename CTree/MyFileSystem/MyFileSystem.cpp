@@ -1,6 +1,7 @@
 /*******************************************************
 *
 *   This file simulate a file system
+*   @Author:Amos.zhu
 *
 *******************************************************/
 
@@ -31,7 +32,7 @@
     node->firstChild=NULL;\
     node->nextSibling=NULL;\
     memcpy(node->elem.name,dirp->d_name,NAMESIZE);\
-    if(lstat(fullPath,&statbuf)==-1){\
+    if(lstat(m_fullPath,&statbuf)==-1){\
         printf("open  fullpath failed, reason : %s\n",strerror(errno));\
         return OPERATOR_FAILED;\
     }\
@@ -41,49 +42,133 @@
         node->elem.type=NORMALFILE;\
 
 
-#define COPY_NAME(src,dst) \
-    AM_U32 dstNameLen=strlen(dst);\
+#define COPY_NAME(dst,src) \
+    AM_U32 dstNameLen=strlen(src);\
     if(dstNameLen>NAMESIZE) {\
         printf("[%d]:Copy name too big\n",__LINE__);\
         return OPERATOR_FAILED;}\
-    strcpy(src,dst);\
+    strcpy(dst,src);\
     src[dstNameLen]=0;
 
 /******************************************************
 *                   Global variable
 ******************************************************/
-char fullPath[MAXLINE];
 
 /******************************************************
 *                 Internal function
 ******************************************************/
-static Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr);
-
-
-Err_t CreateFileSystem(char* filePath)
+static void printNode(file_t node)
 {
-    CTree<file_t>* fileSystem;
+    std::cout<<node.name;
+    if(node.type==NORMALFILE)
+        std::cout<<"*"<<std::endl;
+    else if(node.type==DIRECTORY)
+        std::cout<<"/"<<std::endl;
+}
+
+/********************************************************************
+*
+*   Get the path's obslute path
+*
+*********************************************************************/
+static char* getPath(const char* path)
+{
+    char* currentPath;
+    char* buffer=(char*)malloc(sizeof(char)*BUFSIZE);
+    if(path==NULL)
+        return NULL;
+
+    currentPath=getcwd(NULL,0);
+    chdir(path);
+    buffer=getcwd(NULL,0);
+    chdir(currentPath);
+    return buffer;
+}
+
+/********************************************************************
+*                           Implemention
+********************************************************************/
+
+CFileSystem::CFileSystem(void)
+{
+    m_sysTree=NULL;
+    memset(m_fullPath,0,MAXLINE);
+}
+
+CFileSystem::CFileSystem(const char * path)
+{
+    createFileSystem(path);
+}
+
+CFileSystem::CFileSystem(const CFileSystem& object)
+{
+    if(m_sysTree!=NULL)
+    {
+        delete m_sysTree;
+        m_sysTree=NULL;
+    }
+    m_sysTree=new CTree<file_t>;
+    *m_sysTree=*object.m_sysTree;
+}
+
+CFileSystem::~CFileSystem(void)
+{
+    if((m_sysTree!=NULL)&&(!m_sysTree->IsEmpty()))
+        delete m_sysTree;
+
+    return;
+}
+
+const CFileSystem& CFileSystem::operator=(const CFileSystem& object)
+{
+    if(this==&object)
+        return *this;
+    if(m_sysTree!=NULL)
+    {
+        delete m_sysTree;
+        m_sysTree=NULL;
+    }
+    m_sysTree=new CTree<file_t>;
+    *m_sysTree=*object.m_sysTree;
+    return *this;
+}
+
+
+Err_t CFileSystem::Create(const char * path)
+{
+    createFileSystem(path);
+}
+
+void CFileSystem::PrintOut(void)
+{
+    if(m_sysTree==NULL)
+        return;
+    m_sysTree->PreOrderTraversal();
+}
+
+Err_t CFileSystem::createFileSystem(const char* path)
+{
     struct stat statbuf;
     TreeNode_t<file_t>* rootn; /*root node*/
     char* abPath; /*Absolute Path*/
 
-    if(filePath==NULL)
+    if(path==NULL)
         return INVALIDE_PARAMET;
 
     /*
     *   Do initialize
     */
-    memset(fullPath,0,MAXLINE);
-    strcpy(fullPath,filePath);
+    memset(m_fullPath,0,MAXLINE);
+    strcpy(m_fullPath,path);
 
-    abPath=getPath(filePath);
+    abPath=getPath(path);
 
-    fileSystem=new CTree<file_t>(PrintOut);
+    m_sysTree=new CTree<file_t>(printNode);
     /*
     *   Firstly, Add root
     */
 
-    if(lstat(filePath,&statbuf)==-1)
+    if(lstat(path,&statbuf)==-1)
     {
         printf("open root path failed, reason : %s\n",strerror(errno));
         return OPERATOR_FAILED;
@@ -98,37 +183,19 @@ Err_t CreateFileSystem(char* filePath)
         rootn->elem.type=NORMALFILE;
     COPY_NAME(rootn->elem.name,abPath);
 
-    fileSystem->SetRoot(rootn);
+    if(m_sysTree->SetRoot(rootn)!=RETURN_SUCCESS)
+        return OPERATOR_FAILED;
 
 
     /*
     *   Secondly,construct a file system
     */
 
-    dopath(fileSystem,rootn);
-
-    /*
-     *  Lastly,print out;
-     */
-
-    //fileSystem->PreOrderTraversal();
-
-    CTree<file_t>fileSystem1(fileSystem);
-    fileSystem1.PreOrderTraversal();
-    return RETURN_SUCCESS;
-
+    return dopath(rootn);
 }
 
-void PrintOut(file_t node)
-{
-    std::cout<<node.name;
-    if(node.type==NORMALFILE)
-        std::cout<<"*"<<std::endl;
-    else if(node.type==DIRECTORY)
-        std::cout<<"/"<<std::endl;
-}
 
-Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
+Err_t CFileSystem::dopath(TreeNode_t<file_t>* ptr)
 {
     struct stat statbuf;
     struct dirent* dirp;
@@ -139,7 +206,7 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
     TreeNode_t<file_t>* sibling;
     TreeNode_t<file_t>* current;
 
-    if((fileSystem==NULL)||(ptr==NULL))
+    if((m_sysTree==NULL)||(ptr==NULL))
         return INVALIDE_PARAMET;
 
     if(ptr->elem.type==NORMALFILE)  /*We do not need to process the normal file*/
@@ -148,14 +215,14 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
 
     current=ptr;
 
-    fileName=fullPath+strlen(fullPath);
+    fileName=m_fullPath+strlen(m_fullPath);
     *fileName++='/';
     *fileName=0;
 
     /*
     *   Only directory can run here,check again.
     */
-    if((dp=opendir(fullPath))==NULL)
+    if((dp=opendir(m_fullPath))==NULL)
         return OPERATOR_FAILED;
 
     /*
@@ -168,11 +235,11 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
             continue;
 
         COPY_NAME(fileName,dirp->d_name);
-        CREATE_NEWNODE(child,dirp,statbuf,fullPath);
-        fileSystem->AddFirstChild(current,child);
+        CREATE_NEWNODE(child,dirp,statbuf,m_fullPath);
+        m_sysTree->AddFirstChild(current,child);
         current=child; /*Make current point to first child*/
         if(S_ISDIR(statbuf.st_mode))
-            dopath(fileSystem,current);
+            dopath(current);
         break;
     }
 
@@ -185,33 +252,18 @@ Err_t dopath(CTree<file_t>* fileSystem,TreeNode_t<file_t>* ptr)
         if((strcmp(dirp->d_name,".")==0)||(strcmp(dirp->d_name,"..")==0))
             continue;
         COPY_NAME(fileName,dirp->d_name);
-        CREATE_NEWNODE(sibling,dirp,statbuf,fullPath);
-        fileSystem->AddNextSibling(current,sibling);
+        CREATE_NEWNODE(sibling,dirp,statbuf,m_fullPath);
+        m_sysTree->AddNextSibling(current,sibling);
         current=sibling; /*Make current point to next sibling*/
         if(S_ISDIR(statbuf.st_mode))
-            dopath(fileSystem,current);
+            dopath(current);
     }
     fileName[-1]=0;
 
     return RETURN_SUCCESS;
+
 }
 
 
-/********************************************************************
-*
-*   Get the path's obslute path
-*
-*********************************************************************/
-char* getPath(const char* path)
-{
-    char* currentPath;
-    char* buffer=(char*)malloc(sizeof(char)*BUFSIZE);
-    if(path==NULL)
-        return NULL;
 
-    currentPath=getcwd(NULL,0);
-    chdir(path);
-    buffer=getcwd(NULL,0);
-    chdir(currentPath);
-    return buffer;
-}
+
