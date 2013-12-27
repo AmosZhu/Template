@@ -6,6 +6,7 @@ RPNPATH=$(ROOTPATH)/DataStructure/Chapter3/20ReversePolishNotation
 
 INCLUDE_PATH += $(ROOTPATH)/Template/include/ \
 				$(ROOTPATH)/Template/CBinaryTree/   \
+				$(ROOTPATH)/Template/CStack/	\
 				$(RPNPATH)/
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))

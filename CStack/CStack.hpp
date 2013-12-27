@@ -151,6 +151,29 @@ Err_t CStack<type>::Push(type* elem)
 }
 
 template<class type>
+Err_t CStack<type>::Pop(type* elem)
+{
+    node_t<type>* current;
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+    if(IsEmpty())
+        return RESOURCE_UNAVAILABLE;
+
+    current=m_head;
+    m_head=m_head->next;
+    memcpy(elem,&current->element,sizeof(type));
+    if(current!=NULL)
+        delete current;
+    current=NULL;
+
+    count--;
+    size-=sizeof(node_t<type>);
+
+    return RETURN_SUCCESS;
+}
+
+
+template<class type>
 Err_t CStack<type>::PushNoCopy(type* elem)
 {
     node_t<type>* newNode;
@@ -159,7 +182,7 @@ Err_t CStack<type>::PushNoCopy(type* elem)
         return INVALIDE_PARAMET;
     newNode=new node_t<type>;
     newNode->next=m_head;
-    memcpy(&newNode->element,elem,sizeof(type*));
+    newNode->element=*elem;
     m_head=newNode;
 
     count++;  //Use to count the number of elements
@@ -179,36 +202,18 @@ Err_t CStack<type>::PopNoCopy(type* elem)
 
     current=m_head;
     m_head=m_head->next;
-    memcpy(elem,&current->element,sizeof(type*));
+    *elem=current->element;
+    /*
+    *   Do not delete this memory,it has already given to others;
+    */
+#if 0
     if(current!=NULL)
         delete current;
+#endif /* Modify by Amos.zhu */
     current=NULL;
 
     count--;
-    size-=sizeof(node_t<type>*);
-
-    return RETURN_SUCCESS;
-}
-
-
-template<class type>
-Err_t CStack<type>::Pop(type* elem)
-{
-    node_t<type>* current;
-    if(elem==NULL)
-        return INVALIDE_PARAMET;
-    if(IsEmpty())
-        return RESOURCE_UNAVAILABLE;
-
-    current=m_head;
-    m_head=m_head->next;
-    memcpy(elem,&current->element,sizeof(type));
-    if(current!=NULL)
-        delete current;
-    current=NULL;
-
-    count--;
-    size-=sizeof(node_t<type>);
+    size-=sizeof(node_t<type*>);
 
     return RETURN_SUCCESS;
 }

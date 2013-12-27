@@ -8,17 +8,19 @@
 #include <string.h>
 #include <errno.h>
 #include "CBinaryTree.hpp"
-#include "RPNCalculate.hpp"
+#include "CStack.hpp"
+#include "RPNTree.hpp"
 
-Err_t BuildRPNTree(const char* path)
+static Err_t PRNTreeProcess(CBinaryTree<rpn_t>** RPNTree,rpn_t* expression);
+static void printNode(rpn_t node);
+
+Err_t BuildRPNTree(CBinaryTree<rpn_t>* RPNTree,const char* path)
 {
     FILE* fp;
     char buf[MAXLINE];
     rpn_t RPNExpression[MAXLINE];
-    rpn_t* idx;
-    CBinaryTree<rpn_t>* RPNTree;
 
-    if(path==NULL)
+    if((RPNTree==NULL)||(path==NULL))
         return INVALIDE_PARAMET;
 
     if((fp=fopen(path,"rb+"))==NULL)
@@ -29,22 +31,70 @@ Err_t BuildRPNTree(const char* path)
 
     fscanf(fp,"%s",buf);
 
+    RPNTree->SetPrintFunc(printNode);
+
     if(RPNTranslate(buf,RPNExpression)!=RETURN_SUCCESS)
         return OPERATOR_FAILED;
 
-    for(idx=RPNExpression; idx->type!=TYPE_NULL; idx++)
+    return PRNTreeProcess(&RPNTree,RPNExpression);
+}
+
+Err_t PRNTreeProcess(CBinaryTree<rpn_t>** RPNTree,rpn_t* expression)
+{
+    CStack<nodeType<rpn_t>* > box; /*Using a stack box to process the expression*/
+    nodeType<rpn_t>* newNode;
+    nodeType<rpn_t>* left,*right;
+    rpn_t* idx=expression;
+    if((RPNTree==NULL)||(expression==NULL))
+        return INVALIDE_PARAMET;
+
+    while(idx->type!=TYPE_NULL)
     {
+
+        /*Process number*/
         if(idx->type==TYPE_NUMBER)
-            printf("[%d]",idx->value);
-        else if(idx->type==TYPE_OP)
-            printf("[%c]",idx->value&0xff);
-        else
-            break;
+        {
+            newNode=new nodeType<rpn_t>;
+            newNode->elem=*idx;
+            newNode->lLink=NULL;
+            newNode->rLink=NULL;
+            box.PushNoCopy(&newNode);
+            idx++;
+            continue;
+        }
+
+        /*
+        *   If it is a operators then pop out 2 element from the box,build a tree;
+        */
+
+        if(idx->type==TYPE_OP)
+        {
+            newNode=new nodeType<rpn_t>;
+            newNode->elem=*idx;
+            newNode->lLink=NULL;
+            newNode->rLink=NULL;
+            box.PopNoCopy(&right);
+            box.PopNoCopy(&left);
+
+            (*RPNTree)->SetRoot(newNode);
+            (*RPNTree)->SetLeftChild(left);
+            (*RPNTree)->SetRightChild(right);
+
+            box.PushNoCopy(&newNode);
+            idx++;
+        }
     }
-    printf("\n");
-
-
-    RPNTree=new CBinaryTree<rpn_t>;
 
     return RETURN_SUCCESS;
+
 }
+
+static void printNode(rpn_t node)
+{
+    if(node.type==TYPE_NUMBER)
+        printf("[%d]",node.value);
+    else if(node.type==TYPE_OP)
+        printf("[%c]",node.value&0xff);
+}
+
+

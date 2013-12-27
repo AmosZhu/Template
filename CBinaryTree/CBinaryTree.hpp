@@ -37,6 +37,9 @@ public:
     AM_U32 TreeleavesCount(void);
     void DestroyTree(void);
     void SetPrintFunc(void (*func)(type));
+    void SetRoot(nodeType<type>* node);
+    void SetLeftChild(nodeType<type>* node);
+    void SetRightChild(nodeType<type>* node);
 
 
 public:
@@ -161,6 +164,28 @@ void CBinaryTree<type>::DestroyTree(void)
 {
     destroy(m_root);
 }
+
+
+template<class type>
+void CBinaryTree<type>::SetRoot(nodeType<type>* node)
+{
+    m_root=node;
+}
+
+
+template<class type>
+void CBinaryTree<type>::SetLeftChild(nodeType<type>* node)
+{
+    m_root->lLink=node;
+}
+
+template<class type>
+void CBinaryTree<type>::SetRightChild(nodeType<type>* node)
+{
+    m_root->rLink=node;
+}
+
+
 
 template<class type>
 void CBinaryTree<type>::SetPrintFunc(void (*func)(type))

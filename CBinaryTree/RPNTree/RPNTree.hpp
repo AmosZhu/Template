@@ -3,7 +3,9 @@
 
 
 #include "AmosType.hpp"
-Err_t BuildRPNTree(const char* path);
+#include "RPNCalculate.hpp"
+
+Err_t BuildRPNTree(CBinaryTree<rpn_t>* RPNTree,const char* path);
 
 
 #endif
