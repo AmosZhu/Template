@@ -36,6 +36,14 @@ struct node_t
     node_t* next;
 };
 
+typedef enum COMPARE_ENUM
+{
+    EQUAL,
+    LARGER,
+    SMALLER,
+} cmp_t;
+
+
 
 
 typedef unsigned long AM_U32;

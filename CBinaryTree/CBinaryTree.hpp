@@ -17,6 +17,7 @@ struct nodeType
     type elem;
     nodeType<type>* lLink;
     nodeType<type>* rLink;
+    AM_S32 height; //For the sake of AVL Tree,root node is -1
 };
 
 template<class type>
@@ -32,9 +33,9 @@ public:
     void PreorderTraversal(void);
     void InorderTraversal(void);
     void PostorderTraversal(void);
-    AM_U32 TreeHeight(void);
+    AM_U32 TreeDepth(void);
     AM_U32 TreeNodeCount(void);
-    AM_U32 TreeleavesCount(void);
+    AM_U32 TreeLeavesCount(void);
     void DestroyTree(void);
     void SetPrintFunc(void (*func)(type));
     void SetRoot(nodeType<type>* node);
@@ -42,24 +43,25 @@ public:
     void SetRightChild(nodeType<type>* node);
 
 
+protected:
+    nodeType<type>* m_root;
+    void (*m_printRoute)(type);
+
 public:
     const CBinaryTree<type>& operator=(const CBinaryTree<type>& otherTree);
 
+protected:
+    AM_S32 max(AM_S32 x,AM_S32 y);
+
 private:
-    void copyTree(nodeType<type>* &copiedTreeNode,nodeType<type>* otherTreeNode);
-    void destroy(nodeType<type>* &p);
+    void copyTree(nodeType<type>** copiedTreeNode,nodeType<type>* otherTreeNode);
+    void destroy(nodeType<type>** p);
     void inorder(nodeType<type>* p);
     void preorder(nodeType<type>* p);
     void postorder(nodeType<type>* p);
-    AM_U32 height(nodeType<type>* p);
-    AM_U32 max(AM_U32 x,AM_U32 y);
+    AM_U32 depth(nodeType<type>* p);
     AM_U32 nodeCount(nodeType<type>* p);
     AM_U32 leavesCount(nodeType<type>* p);
-
-
-protected:
-    nodeType<type>* m_root;
-    void (*m_printFunc)(type);
 
 };
 
@@ -68,7 +70,7 @@ template<class type>
 CBinaryTree<type>::CBinaryTree(void)
 {
     m_root=NULL;
-    m_printFunc=NULL;
+    m_printRoute=NULL;
 }
 
 template<class type>
@@ -79,16 +81,16 @@ CBinaryTree<type>::CBinaryTree(const CBinaryTree<type>& otherTree)
         m_root=NULL;
         return;
     }
-    m_printFunc=otherTree.m_printFunc;
-    copyTree(m_root,otherTree);
+    m_printRoute=otherTree.m_printRoute;
+    copyTree(&m_root,otherTree);
 }
 
 template<class type>
 CBinaryTree<type>::~CBinaryTree(void)
 {
-    destroy(m_root);
+    destroy(&m_root);
     m_root=NULL;
-    m_printFunc=NULL;
+    m_printRoute=NULL;
 }
 
 template<class type>
@@ -98,7 +100,7 @@ const CBinaryTree<type>& CBinaryTree<type>::operator=(const CBinaryTree<type>& o
         return this;
 
     if(m_root!=NULL)
-        destroy(m_root);
+        destroy(&m_root);
 
     if(otherTree.m_root==NULL)
     {
@@ -106,7 +108,7 @@ const CBinaryTree<type>& CBinaryTree<type>::operator=(const CBinaryTree<type>& o
         return;
     }
 
-    m_printFunc=otherTree.m_printFunc;
+    m_printRoute=otherTree.m_printRoute;
     copyTree(m_root,otherTree);
 }
 
@@ -142,9 +144,9 @@ void CBinaryTree<type>::PostorderTraversal(void)
 }
 
 template<class type>
-AM_U32 CBinaryTree<type>::TreeHeight(void)
+AM_U32 CBinaryTree<type>::TreeDepth(void)
 {
-    return height(m_root);
+    return depth(m_root);
 }
 
 template<class type>
@@ -154,7 +156,7 @@ AM_U32 CBinaryTree<type>::TreeNodeCount(void)
 }
 
 template<class type>
-AM_U32 CBinaryTree<type>::TreeleavesCount(void)
+AM_U32 CBinaryTree<type>::TreeLeavesCount(void)
 {
     return leavesCount(m_root);
 }
@@ -162,7 +164,7 @@ AM_U32 CBinaryTree<type>::TreeleavesCount(void)
 template<class type>
 void CBinaryTree<type>::DestroyTree(void)
 {
-    destroy(m_root);
+    destroy(&m_root);
 }
 
 
@@ -190,38 +192,38 @@ void CBinaryTree<type>::SetRightChild(nodeType<type>* node)
 template<class type>
 void CBinaryTree<type>::SetPrintFunc(void (*func)(type))
 {
-    m_printFunc=func;
+    m_printRoute=func;
 }
 
 
 template<class type>
-void CBinaryTree<type>::copyTree(nodeType<type>* &copiedTreeNode,nodeType<type>* otherTreeNode)
+void CBinaryTree<type>::copyTree(nodeType<type>** copiedTreeNode,nodeType<type>* otherTreeNode)
 {
     if(otherTreeNode==NULL)
     {
-        copiedTreeNode=NULL;
+        *copiedTreeNode=NULL;
         return;
     }
 
 
-    copiedTreeNode=new nodeType<type>;
-    copiedTreeNode->info=otherTreeNode->info;
-    copyTree(copiedTreeNode->lLink,otherTreeNode->lLink);
-    copyTree(copiedTreeNode->rLink,otherTreeNode->rLink);
+    *copiedTreeNode=new nodeType<type>;
+    memcpy(&(*copiedTreeNode)->elem,&otherTreeNode->elem,sizeof(type));
+    copyTree(&(*copiedTreeNode)->lLink,otherTreeNode->lLink);
+    copyTree(&(*copiedTreeNode)->rLink,otherTreeNode->rLink);
 
     return;
 }
 
 template<class type>
-void CBinaryTree<type>::destroy(nodeType<type>* &p)
+void CBinaryTree<type>::destroy(nodeType<type>** p)
 {
-    if(p==NULL)
+    if((p==NULL)||(*p==NULL))
         return;
 
-    destroy(p->lLink);
-    destroy(p->rLink);
-    delete p;
-    p=NULL;
+    destroy(&(*p)->lLink);
+    destroy(&(*p)->rLink);
+    delete *p;
+    *p=NULL;
     return;
 }
 
@@ -232,8 +234,8 @@ void CBinaryTree<type>::inorder(nodeType<type>* p)
         return;
 
     inorder(p->lLink);
-    if(m_printFunc!=NULL)
-        m_printFunc(p->elem);
+    if(m_printRoute!=NULL)
+        m_printRoute(p->elem);
     inorder(p->rLink);
     return;
 }
@@ -244,8 +246,8 @@ void CBinaryTree<type>::preorder(nodeType<type>* p)
     if(p==NULL)
         return;
 
-    if(m_printFunc!=NULL)
-        m_printFunc(p->elem);
+    if(m_printRoute!=NULL)
+        m_printRoute(p->elem);
     preorder(p->lLink);
     preorder(p->rLink);
     return;
@@ -259,25 +261,25 @@ void CBinaryTree<type>::postorder(nodeType<type>* p)
 
     postorder(p->lLink);
     postorder(p->rLink);
-    if(m_printFunc!=NULL)
-        m_printFunc(p->elem);
+    if(m_printRoute!=NULL)
+        m_printRoute(p->elem);
 
     return;
 }
 
 template<class type>
-AM_U32 CBinaryTree<type>::height(nodeType<type>* p)
+AM_U32 CBinaryTree<type>::depth(nodeType<type>* p)
 {
     if(p==NULL)
         return 0;
 
-    return 1+max(height(p->lLink),height(p->rLink));
+    return 1+max(depth(p->lLink),depth(p->rLink));
 }
 
 template<class type>
-AM_U32 CBinaryTree<type>::max(AM_U32 x,AM_U32 y)
+AM_S32 CBinaryTree<type>::max(AM_S32 x,AM_S32 y)
 {
-    return x?y:x>=y;
+    return (x>=y)?x:y;
 }
 
 template<class type>
@@ -294,7 +296,7 @@ AM_U32 CBinaryTree<type>::leavesCount(nodeType<type>* p)
     if(p==NULL)
         return 0;
 
-    if(p->rLink==NULL&&p->lLink==NULL)
+    if((p->rLink==NULL)&&(p->lLink==NULL))
         return 1;
 
     return leavesCount(p->rLink)+leavesCount(p->lLink);

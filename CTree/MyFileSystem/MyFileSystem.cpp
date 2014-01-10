@@ -40,7 +40,7 @@
         node->elem.type=DIRECTORY;\
     else\
         node->elem.type=NORMALFILE;\
-
+ 
 
 #define COPY_NAME(dst,src) \
     AM_U32 dstNameLen=strlen(src);\
@@ -102,11 +102,13 @@ CFileSystem::CFileSystem(const char * path)
 
 CFileSystem::CFileSystem(const CFileSystem& object)
 {
+#if 0
     if(m_sysTree!=NULL)
     {
         delete m_sysTree;
         m_sysTree=NULL;
     }
+#endif
     m_sysTree=new CTree<file_t>;
     *m_sysTree=*object.m_sysTree;
 }
@@ -114,7 +116,10 @@ CFileSystem::CFileSystem(const CFileSystem& object)
 CFileSystem::~CFileSystem(void)
 {
     if((m_sysTree!=NULL)&&(!m_sysTree->IsEmpty()))
+    {
         delete m_sysTree;
+        m_sysTree=NULL;
+    }
 
     return;
 }
@@ -139,10 +144,24 @@ Err_t CFileSystem::Create(const char * path)
     createFileSystem(path);
 }
 
+void CFileSystem::Destroy(void)
+{
+    if((m_sysTree!=NULL)&&(!m_sysTree->IsEmpty()))
+    {
+        delete m_sysTree;
+        m_sysTree=NULL;
+    }
+
+    return;
+}
+
 void CFileSystem::PrintOut(void)
 {
     if(m_sysTree==NULL)
+    {
+        std::cout<<"Empty file system!"<<std::endl;
         return;
+    }
     m_sysTree->PreOrderTraversal();
 }
 

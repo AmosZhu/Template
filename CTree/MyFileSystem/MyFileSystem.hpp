@@ -28,6 +28,7 @@ public:
 
 public:
     Err_t Create(const char* path);
+	void Destroy(void);
     void PrintOut(void);
 
 public:

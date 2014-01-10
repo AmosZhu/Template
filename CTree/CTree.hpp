@@ -75,13 +75,6 @@ CTree<type>::CTree(void (*func)(type))
 template<class type>
 CTree<type>::CTree(const CTree<type>* object)
 {
-#if 0
-    CStack<TreeNode_t<type> > srcStack,dstStack;
-    TreeNode_t<type>* newNode;
-    TreeNode_t<type>* src;
-    TreeNode_t<type>* dst;
-#endif /* Modify by Amos.zhu */
-
     if((object==NULL)||(object->IsEmpty()))
     {
         m_root=NULL;
@@ -93,42 +86,6 @@ CTree<type>::CTree(const CTree<type>* object)
     copyTree(&m_root,object->m_root);
 
     return;
-#if 0
-    src=object->m_root;
-    newNode=new TreeNode_t<type>;
-    memcpy(newNode,src,sizeof(TreeNode_t<type>));
-    newNode->firstChild=NULL;
-    newNode->nextSibling=NULL;
-    dst=this->m_root=newNode;
-
-    srcStack.PushNoCopy(&src); /* Save the address of the pointer */
-    dstStack.PushNoCopy(&dst);
-
-    /*
-    *   Begin Construct a tree
-    */
-
-    while(!srcStack.IsEmpty())
-    {
-        srcStack.PopNoCopy(&src);
-        dstStack.PopNoCopy(&dst);
-
-        if(src->nextSibling!=NULL)
-        {
-            newNode=new TreeNode_t<type>;
-            memcpy(newNode,src->nextSibling,sizeof(TreeNode_t<type>));
-            newNode->firstChild=NULL;
-            newNode->nextSibling=NULL;
-            dst->nextSibling=newNode;
-            src=src->nextSibling;
-            dst=dst->nextSibling;
-        }
-
-
-    }
-
-#endif /* Modify by Amos.zhu */
-
 }
 
 template<class type>

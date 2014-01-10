@@ -11,6 +11,6 @@ int main(int argc,char* argv[])
     CBinaryTree<rpn_t> RPNTree;
 
     BuildRPNTree(&RPNTree,INPUTPATH);
-    RPNTree.InorderTraversal();
+    RPNTree.PostorderTraversal();
 }
 
