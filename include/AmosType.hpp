@@ -41,6 +41,7 @@ typedef enum COMPARE_ENUM
     EQUAL,
     LARGER,
     SMALLER,
+    INVALID,
 } cmp_t;
 
 

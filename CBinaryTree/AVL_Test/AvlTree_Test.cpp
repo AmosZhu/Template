@@ -2,10 +2,10 @@
 #include "CBSAvlTree.hpp"
 #include "AvlTree_Test.hpp"
 
-//AM_U32 data[]= {12,11,10,9,8,7,6,5,4,3,2,1}; //left single rotation only
+AM_U32 data[]= {12,11,10,9,8,7,6,5,4,3,2,1}; //left single rotation only
 //AM_U32 data[]={11,22,54,32,89,57,40,12,101,220,445,532,980,1,4,0}; //left & right single rotation
 //AM_U32 data[]={100,40,80}; // cause right double rotation
-AM_U32 data[]={100,120,110}; // casue left double rotation
+//AM_U32 data[]={100,120,110}; // casue left double rotation
 
 static void printNode(AM_U32 node)
 {
@@ -14,6 +14,9 @@ static void printNode(AM_U32 node)
 
 static cmp_t cmpFunc(AM_U32* arg1,AM_U32* arg2)
 {
+    if((arg1==NULL)||(arg2==NULL))
+        return INVALID;
+
     if(*arg1==*arg2)
         return EQUAL;
     else if(*arg1>*arg2)
@@ -33,7 +36,9 @@ void AVLTree_UT(void)
     AM_U32 idx;
     AM_U32 length=sizeof(data)/sizeof(AM_U32);
     for(idx=0; idx<length; idx++)
+	{
         tree1.Insert(&data[idx]);
+	}
 
     printf("------------> CBSAvlTree Info <---------------\n");
     printf("Tree depth is %d\n",tree1.TreeDepth());

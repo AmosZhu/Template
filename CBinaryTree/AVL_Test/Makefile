@@ -4,7 +4,9 @@ SRCS += $(wildcard *.cpp)
 ROOTPATH = ../../..
 
 INCLUDE_PATH += $(ROOTPATH)/Template/include/ \
-				$(ROOTPATH)/Template/CBinaryTree/
+				$(ROOTPATH)/Template/CBinaryTree/ \
+				$(ROOTPATH)/Template/CStack/
+
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 

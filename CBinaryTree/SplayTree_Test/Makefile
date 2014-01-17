@@ -4,14 +4,13 @@ SRCS += $(wildcard *.cpp)
 ROOTPATH = ../../..
 
 INCLUDE_PATH += $(ROOTPATH)/Template/include/ \
-				$(ROOTPATH)/Template/CBinaryTree/  \
+				$(ROOTPATH)/Template/CBinaryTree/ \
 				$(ROOTPATH)/Template/CStack/
-
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 
 CFLAGS += $(foreach dir, $(INCLUDE_PATH), -I$(dir))
-TARGET = CBSTree
+TARGET = SplayTree
 
 
 .PHONY:all

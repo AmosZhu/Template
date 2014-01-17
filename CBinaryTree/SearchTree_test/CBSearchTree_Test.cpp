@@ -12,6 +12,9 @@ static void printNode(AM_U32 node)
 
 static cmp_t cmpFunc(AM_U32* arg1,AM_U32* arg2)
 {
+    if((arg1==NULL)||(arg2==NULL))
+        return INVALID;
+
     if(*arg1==*arg2)
         return EQUAL;
     else if(*arg1>*arg2)

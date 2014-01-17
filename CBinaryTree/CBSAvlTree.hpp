@@ -10,6 +10,7 @@
 
 #include "AmosType.hpp"
 #include "CBSearchTree.hpp"
+#include "CStack.hpp"
 #include <string.h>
 #include <iostream>
 
@@ -26,7 +27,15 @@ private:
     nodeType<type>* singleRotationWithRight(nodeType<type>* k2);
     nodeType<type>* doubleRotationWithLeft(nodeType<type>* k3);
     nodeType<type>* doubleRotationWithRight(nodeType<type>* k3);
+    /*************************************************
+    *       recursive insert
+    *************************************************/
     nodeType<type>* insert(type elem,nodeType<type>** node);
+    /*************************************************
+    *       non-recursive insert
+    *       excersise:4-19
+    *************************************************/
+    nodeType<type>* insert(type elem);
     AM_S32 height(nodeType<type>* p);
 };
 
@@ -35,8 +44,19 @@ Err_t CBSAvlTree<type>::Insert(type* elem)
 {
     if(elem==NULL)
         return INVALIDE_PARAMET;
+#if 0
     if(insert(*elem,&this->m_root)==NULL)
         return OPERATOR_FAILED;
+#endif /* Modify by Amos.zhu */
+
+    /*
+    *   Test non-recursive insert function
+    */
+
+#if 1
+    if(insert(*elem)==NULL)
+        return OPERATOR_FAILED;
+#endif
 
     return RETURN_SUCCESS;
 }
@@ -105,6 +125,174 @@ nodeType<type>* CBSAvlTree<type>::insert(type elem,nodeType<type>** node)
     return *node;
 }
 
+
+/******************************************
+*
+*   Non-recursive implement
+*
+*   exercise: 4-19
+*
+******************************************/
+
+template<class type>
+nodeType<type>* CBSAvlTree<type>::insert(type elem)
+{
+    nodeType<type>* newNode,*current,*tailNode,*temp;
+    nodeType<type>* p1,*p2; /*Using to store the address of the node*/
+    CStack<nodeType<type>* > nodeStack; /*Use for the backtracking the node*/
+
+    cmp_t result,r1,r2,r3;
+
+    /*
+     *  Insert root firstly;
+     */
+
+    if(this->m_root==NULL)
+    {
+        this->m_root=new nodeType<type>;
+        this->m_root->lLink=NULL;
+        this->m_root->rLink=NULL;
+        memcpy(&this->m_root->elem,&elem,sizeof(type));
+        this->m_root->height=0;
+        return this->m_root;
+    }
+
+    /*
+    *   Search from the root
+    */
+
+    current=this->m_root;
+    while(current!=NULL)
+    {
+        tailNode=current;
+        if((result=this->m_cmpRoute(&elem,&current->elem))==LARGER)
+        {
+            nodeStack.PushNoCopy(&current);
+            current=current->rLink;
+        }
+        else if(result==SMALLER)
+        {
+            nodeStack.PushNoCopy(&current);
+            current=current->lLink;
+        }
+        else if((result==EQUAL)||(result==INVALID))
+        {
+            return NULL;
+        }
+    }
+
+    /*
+    *   Insert the new node;
+    */
+    newNode=new nodeType<type>;
+    newNode->lLink=NULL;
+    newNode->rLink=NULL;
+    newNode->height=0;
+    memcpy(&newNode->elem,&elem,sizeof(type)); /* always use copy */
+
+    if((result=this->m_cmpRoute(&elem,&tailNode->elem))==LARGER)
+        tailNode->rLink=newNode;
+    else if(result==SMALLER)
+        tailNode->lLink=newNode;
+    else
+    {
+        std::cout<<"Node is already in the tree!"<<std::endl;
+    }
+
+    /*
+    *   Backtracking the node in order to update its height and do rotations
+    */
+
+    if(!nodeStack.IsEmpty())
+    {
+        nodeStack.PopNoCopy(&p2);
+    }
+
+    while(!nodeStack.IsEmpty())
+    {
+        p1=p2;
+        nodeStack.PopNoCopy(&p2);
+        p1->height=this->max(height(p1->lLink),height(p1->rLink))+1;
+        if((r1=this->m_cmpRoute(&elem,&p1->elem))==LARGER)
+        {
+            if((height(p1->rLink)-height(p1->lLink))==2)
+            {
+                if((r2=this->m_cmpRoute(&elem,&p1->rLink->elem))==LARGER)
+                {
+                    if((r3=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=singleRotationWithRight(p1);
+                    else if(r3==SMALLER)
+                        p2->lLink=singleRotationWithRight(p1);
+                }
+                else if(r2==SMALLER)
+                {
+                    if((r3=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=doubleRotationWithLeft(p1);
+                    else if(r3==SMALLER)
+                        p2->lLink=doubleRotationWithLeft(p1);
+                }
+            }
+        }
+        else if(r1==SMALLER)
+        {
+            if((height(p1->lLink)-height(p1->rLink))==2)
+            {
+                if((r2=this->m_cmpRoute(&elem,&p1->lLink->elem))==LARGER)
+                {
+                    if((r3=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=doubleRotationWithRight(p1);
+                    else if(r3==SMALLER)
+                        p2->lLink=doubleRotationWithRight(p1);
+                }
+                else if(r2==SMALLER)
+                {
+                    if((r3=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=singleRotationWithLeft(p1);
+                    else if(r3==SMALLER)
+                        p2->lLink=singleRotationWithLeft(p1);
+                }
+            }
+        }
+    }
+
+    /*
+    *   Process the last node p2 also is the root:
+    */
+
+    p2->height=this->max(height(p2->lLink),height(p2->rLink))+1;
+    if((r1=this->m_cmpRoute(&elem,&p2->elem))==LARGER)
+    {
+        if((height(p2->rLink)-height(p2->lLink))==2)
+        {
+            if((r2=this->m_cmpRoute(&elem,&p2->rLink->elem))==LARGER)
+            {
+                this->m_root=singleRotationWithRight(p2);
+            }
+            else if(r2==SMALLER)
+            {
+                this->m_root=doubleRotationWithLeft(p2);
+            }
+        }
+    }
+    else if(r1==SMALLER)
+    {
+        if((height(p2->lLink)-height(p2->rLink))==2)
+        {
+            if((r2=this->m_cmpRoute(&elem,&p2->lLink->elem))==LARGER)
+            {
+                this->m_root=doubleRotationWithRight(p2);
+            }
+            else if(r2==SMALLER)
+            {
+                this->m_root=singleRotationWithLeft(p2);
+            }
+        }
+    }
+
+    return this->m_root;
+}
+
+
 template<class type>
 nodeType<type>* CBSAvlTree<type>::singleRotationWithLeft(nodeType<type>* k2)
 {
@@ -117,14 +305,14 @@ nodeType<type>* CBSAvlTree<type>::singleRotationWithLeft(nodeType<type>* k2)
     k2->lLink=k1->rLink;
     k1->rLink=k2;
 
-	printf("[%s]:",__FUNCTION__);
-	this->m_printRoute(k2->elem);
-	printf(" & ");
-	this->m_printRoute(k1->elem);
-	printf("\n");
+    printf("[%s]:",__FUNCTION__);
+    this->m_printRoute(k2->elem);
+    printf(" & ");
+    this->m_printRoute(k1->elem);
+    printf("\n");
 
-    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
     k2->height=this->max(height(k2->lLink),height(k2->rLink))+1;
+    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
     return k1;
 }
 
@@ -140,18 +328,19 @@ nodeType<type>* CBSAvlTree<type>::singleRotationWithRight(nodeType<type>* k2)
     k2->rLink=k1->lLink;
     k1->lLink=k2;
 
-	printf("[%s]:",__FUNCTION__);
-	this->m_printRoute(k2->elem);
-	printf(" & ");
-	this->m_printRoute(k1->elem);
-	printf("\n");
+    printf("[%s]:",__FUNCTION__);
+    this->m_printRoute(k2->elem);
+    printf(" & ");
+    this->m_printRoute(k1->elem);
+    printf("\n");
 
-    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
     k2->height=this->max(height(k2->lLink),height(k2->rLink))+1;
+    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
 
     return k1;
 }
 
+#if 0
 template<class type>
 nodeType<type>* CBSAvlTree<type>::doubleRotationWithLeft(nodeType<type>* k3)
 {
@@ -179,6 +368,55 @@ nodeType<type>* CBSAvlTree<type>::doubleRotationWithRight(nodeType<type>* k3)
 
     return singleRotationWithLeft(k3);
 }
+#endif /* Modify by Amos.zhu */
+
+template<class type>
+nodeType<type>* CBSAvlTree<type>::doubleRotationWithLeft(nodeType<type>* k3)
+{
+    nodeType<type>* k2,*k1;
+
+    if(k3==NULL)
+        return NULL;
+
+    k2=k3->rLink;
+    k1=k2->lLink;
+
+    k2->lLink=k1->rLink;
+    k1->rLink=k2;
+
+    k3->rLink=k1->lLink;
+    k1->lLink=k3;
+
+    k3->height=this->max(height(k3->lLink),height(k3->rLink))+1;
+    k2->height=this->max(height(k2->lLink),height(k2->rLink))+1;
+    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
+    return k1;
+}
+
+template<class type>
+nodeType<type>* CBSAvlTree<type>::doubleRotationWithRight(nodeType<type>* k3)
+{
+    nodeType<type>* k2,*k1;
+
+    if(k3==NULL)
+        return NULL;
+
+    k2=k3->lLink;
+    k1=k2->rLink;
+
+    k2->rLink=k1->lLink;
+    k1->lLink=k2;
+
+    k3->lLink=k1->rLink;
+    k1->rLink=k3;
+
+    k3->height=this->max(height(k3->lLink),height(k3->rLink))+1;
+    k2->height=this->max(height(k2->lLink),height(k2->rLink))+1;
+    k1->height=this->max(height(k1->lLink),height(k1->rLink))+1;
+
+    return k1;
+}
+
 
 
 #endif

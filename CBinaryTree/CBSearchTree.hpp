@@ -13,7 +13,7 @@ public:
     CBSearchTree();
     CBSearchTree(const CBSearchTree<type>& object);
     ~CBSearchTree();
-    nodeType<type>* Find(type* item);
+    virtual nodeType<type>* Find(type* item);
     nodeType<type>* FindMin(void);
     nodeType<type>* FindMax(void);
 
@@ -24,6 +24,10 @@ public:
 
     virtual Err_t Insert(type* item);
     virtual Err_t Delete(type* item);
+
+protected:
+    nodeType<type>* findMin(nodeType<type>* root);
+    nodeType<type>* findMax(nodeType<type>* root);
 
 private:
     void deleteFromTree(nodeType<type>** p);
@@ -94,7 +98,6 @@ nodeType<type>* CBSearchTree<type>::FindMax()
 
     return current;
 }
-
 
 
 template<class type>
@@ -296,5 +299,40 @@ void CBSearchTree<type>::deleteFromTree(nodeType<type>** p)
         delete current;
     }
 }
+
+template<class type>
+nodeType<type>* CBSearchTree<type>::findMin(nodeType<type>* root)
+{
+    nodeType<type>* current=NULL;
+
+    if(root==NULL)
+        return NULL;
+
+    current=root;
+    while(current->lLink!=NULL)
+    {
+        current=current->lLink;
+    }
+
+    return current;
+}
+
+template<class type>
+nodeType<type>* CBSearchTree<type>::findMax(nodeType<type>* root)
+{
+    nodeType<type>* current=NULL;
+
+    if(root==NULL)
+        return NULL;
+
+    current=root;
+    while(current->rLink!=NULL)
+    {
+        current=current->rLink;
+    }
+
+    return current;
+}
+
 
 #endif
