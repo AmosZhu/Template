@@ -31,7 +31,6 @@ protected:
 
 private:
     void deleteFromTree(nodeType<type>** p);
-
 protected:
     cmp_t (*m_cmpRoute)(type*,type*);
 };
@@ -250,6 +249,8 @@ Err_t CBSearchTree<type>::Delete(type* item)
                 deleteFromTree(&this->m_root);
         }
     }
+
+    return RETURN_SUCCESS;
 
 }
 

@@ -8,6 +8,8 @@
 *
 ***********************************************************************/
 
+#define DB_PRINT(fmt,args...) printf("\033[33m [%s][%d]"fmt"\033[0m",__FUNCTION__,__LINE__,##args)
+
 #include "AmosType.hpp"
 #include "CBSearchTree.hpp"
 #include "CStack.hpp"
@@ -36,7 +38,10 @@ private:
     *       excersise:4-19
     *************************************************/
     nodeType<type>* insert(type elem);
+    void deleteFromTree(nodeType<type>** p,CStack<nodeType<type>* >* nodeStack,type* elem,BOOL* isDelay);
+
     AM_S32 height(nodeType<type>* p);
+
 };
 
 template<class type>
@@ -44,7 +49,7 @@ Err_t CBSAvlTree<type>::Insert(type* elem)
 {
     if(elem==NULL)
         return INVALIDE_PARAMET;
-#if 0
+#if 1
     if(insert(*elem,&this->m_root)==NULL)
         return OPERATOR_FAILED;
 #endif /* Modify by Amos.zhu */
@@ -53,7 +58,7 @@ Err_t CBSAvlTree<type>::Insert(type* elem)
     *   Test non-recursive insert function
     */
 
-#if 1
+#if 0
     if(insert(*elem)==NULL)
         return OPERATOR_FAILED;
 #endif
@@ -61,13 +66,187 @@ Err_t CBSAvlTree<type>::Insert(type* elem)
     return RETURN_SUCCESS;
 }
 
-/*
-*   Not implement yet
-*/
+/******************************************
+*
+*   Non-lazy delete implement
+*
+*   exercise: 4-20
+*
+******************************************/
 
 template<class type>
 Err_t CBSAvlTree<type>::Delete(type* elem)
 {
+
+    printf("CBSAvlTree::%s\n",__FUNCTION__);
+    cmp_t r1,r2;
+    nodeType<type>* current,*tailNode,*p1,*p2;
+    CStack<nodeType<type>* > nodeStack; /*Use for the backtracking the node*/
+    type deleteElem;
+    BOOL delayReplace=FALSE;
+    BOOL found=FALSE;
+
+
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+
+    memcpy(&deleteElem,elem,sizeof(type));
+
+    /*
+    *   Firstly,find out the position in the tree
+    */
+
+    if(this->m_root==NULL)
+    {
+        std::cout<<"This tree is empty!"<<std::endl;
+        return OPERATOR_FAILED;
+    }
+
+    current=this->m_root;
+    tailNode=NULL;
+    while((current!=NULL)&&(found!=TRUE))
+    {
+        if((r1=this->m_cmpRoute(&deleteElem,&current->elem))==EQUAL)
+        {
+            found=TRUE;
+            continue;
+        }
+
+        tailNode=current;
+        nodeStack.PushNoCopy(&current);
+        if(r1==LARGER)
+        {
+            current=current->rLink;
+        }
+        else if(r1==SMALLER)
+        {
+            current=current->lLink;
+        }
+    }
+
+    if((current==NULL)||(found!=TRUE))
+    {
+        std::cout<<"Element not find in the tree!"<<std::endl;
+        return OPERATOR_FAILED;
+    }
+
+    /*
+    *   Secondly, delete the element from the tree
+    */
+
+    if(tailNode!=NULL)
+    {
+        DB_PRINT("\n");
+        if((r1=this->m_cmpRoute(&deleteElem,&tailNode->elem))==LARGER)
+            deleteFromTree(&tailNode->rLink,&nodeStack,&deleteElem,&delayReplace);
+        else if(r1==SMALLER)
+            deleteFromTree(&tailNode->lLink,&nodeStack,&deleteElem,&delayReplace);
+    }
+    else
+    {
+        DB_PRINT("\n");
+        deleteFromTree(&this->m_root,&nodeStack,&deleteElem,&delayReplace);
+    }
+
+    /*
+    *   Thirdly, backtracing the node to update its height and do rotation
+    */
+
+    if(!nodeStack.IsEmpty())
+    {
+        nodeStack.PopNoCopy(&p2);
+    }
+
+    while(!nodeStack.IsEmpty())
+    {
+        p1=p2;
+        nodeStack.PopNoCopy(&p2);
+        p1->height=this->max(height(p1->lLink),height(p1->rLink))+1;
+        if((r1=this->m_cmpRoute(&deleteElem,&p1->elem))==SMALLER)
+        {
+            if((height(p1->rLink)-height(p1->lLink))==2)
+            {
+                if(height(p1->rLink->lLink)>height(p1->rLink->rLink))
+                {
+                    if((r2=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=doubleRotationWithLeft(p1);
+                    else if(r2==SMALLER)
+                        p2->lLink=doubleRotationWithLeft(p1);
+                }
+                else
+                {
+                    if((r2=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=singleRotationWithRight(p1);
+                    else if(r2==SMALLER)
+                        p2->lLink=singleRotationWithRight(p1);
+                }
+            }
+        }
+        else if(r1==LARGER)
+        {
+            if((height(p1->lLink)-height(p1->rLink))==2)
+            {
+                if(height(p1->lLink->lLink)>height(p1->lLink->rLink))
+                {
+                    if((r2=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=singleRotationWithLeft(p1);
+                    else if(r2==SMALLER)
+                        p2->lLink=singleRotationWithLeft(p1);
+
+                }
+                else
+                {
+                    if((r2=this->m_cmpRoute(&p1->elem,&p2->elem))==LARGER)
+                        p2->rLink=doubleRotationWithRight(p1);
+                    else if(r2==SMALLER)
+                        p2->lLink=doubleRotationWithRight(p1);
+                }
+            }
+        }
+    }
+
+    /*
+    *   Process the last node p2 also is the root:
+    */
+
+    p2->height=this->max(height(p2->lLink),height(p2->rLink))+1;
+    if((r1=this->m_cmpRoute(&deleteElem,&p2->elem))==SMALLER)
+    {
+        if((height(p2->rLink)-height(p2->lLink))==2)
+        {
+            if(height(p2->rLink->lLink)>height(p2->rLink->rLink))
+            {
+                this->m_root=doubleRotationWithLeft(p2);
+            }
+            else
+            {
+                this->m_root=singleRotationWithRight(p2);
+            }
+        }
+    }
+    else if(r1==LARGER)
+    {
+        if((height(p2->lLink)-height(p2->rLink))==2)
+        {
+            if(height(p2->lLink->lLink)>height(p2->lLink->rLink))
+            {
+                this->m_root=singleRotationWithLeft(p2);
+            }
+            else if(r2==SMALLER)
+            {
+                this->m_root=doubleRotationWithRight(p2);
+            }
+        }
+    }
+
+    /*
+    *   Lastly, if the delete node have the left and right child,replay it with the deleteElem
+    */
+
+    if(delayReplace==TRUE)
+    {
+        memcpy(&current->elem,&deleteElem,sizeof(type));
+    }
 
     return RETURN_SUCCESS;
 }
@@ -184,6 +363,7 @@ nodeType<type>* CBSAvlTree<type>::insert(type elem)
     /*
     *   Insert the new node;
     */
+
     newNode=new nodeType<type>;
     newNode->lLink=NULL;
     newNode->rLink=NULL;
@@ -417,6 +597,59 @@ nodeType<type>* CBSAvlTree<type>::doubleRotationWithRight(nodeType<type>* k3)
     return k1;
 }
 
+template<class type>
+void CBSAvlTree<type>::deleteFromTree(nodeType<type>** p,CStack<nodeType<type>* >* nodeStack,type* elem,BOOL* isDelay)
+{
+    nodeType<type>* temp;
+    nodeType<type>* tailNode;
+    nodeType<type>* current;
+
+    if((p==NULL)||(*p==NULL)||(nodeStack==NULL))
+        return;
+
+    if(((*p)->rLink==NULL)&&((*p)->lLink==NULL))
+    {
+        temp=*p;
+        delete temp;
+        *p=NULL;
+    }
+    else if((*p)->rLink==NULL)
+    {
+        temp=*p;
+        *p=(*p)->lLink;
+        delete temp;
+    }
+    else if((*p)->lLink==NULL)
+    {
+        temp=*p;
+        *p=(*p)->rLink;
+        delete temp;
+    }
+    else
+    {
+        /*
+        *   Look for the largest element from its left child to replace itself
+        */
+        current=(*p)->lLink;
+        nodeStack->PushNoCopy(p);
+        tailNode=NULL;
+        while(current->rLink!=NULL)
+        {
+            nodeStack->PushNoCopy(&current);
+            tailNode=current;
+            current=current->rLink;
+        }
+        *isDelay=TRUE;
+        //memcpy(&(*p)->elem,&current->elem,sizeof(type));
+        if(tailNode==NULL)
+            (*p)->lLink=current->lLink;
+        else
+            tailNode->rLink=current->lLink;
+
+        memcpy(elem,&current->elem,sizeof(type));
+        delete current;
+    }
+}
 
 
 #endif
