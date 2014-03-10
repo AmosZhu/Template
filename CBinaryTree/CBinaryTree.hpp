@@ -52,13 +52,12 @@ public:
 
 protected:
     AM_S32 max(AM_S32 x,AM_S32 y);
-
-private:
-    void copyTree(nodeType<type>** copiedTreeNode,nodeType<type>* otherTreeNode);
-    void destroy(nodeType<type>** p);
     void inorder(nodeType<type>* p);
     void preorder(nodeType<type>* p);
     void postorder(nodeType<type>* p);
+private:
+    void copyTree(nodeType<type>** copiedTreeNode,nodeType<type>* otherTreeNode);
+    void destroy(nodeType<type>** p);
     AM_U32 depth(nodeType<type>* p);
     AM_U32 nodeCount(nodeType<type>* p);
     AM_U32 leavesCount(nodeType<type>* p);

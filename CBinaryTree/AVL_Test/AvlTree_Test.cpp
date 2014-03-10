@@ -8,6 +8,7 @@
 //AM_U32 data[]={100,40,80}; // cause right double rotation
 //AM_U32 data[]={100,120,110}; // casue left double rotation
 AM_U32 data[]={8,4,20,16,25};
+
 static void printNode(AM_U32 node)
 {
     printf("[%d]",node);
