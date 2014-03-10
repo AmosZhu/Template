@@ -25,6 +25,8 @@ public:
 
     Err_t Enqueue(type elem);
     Err_t Dequeue(type* elem);
+    Err_t EnqueueNoCopy(type* elem);
+    Err_t DequeueNoCopy(type* elem);
     AM_S32 Search(type elem);
     AM_U32 CountNo(void);
     BOOL IsEmpty(void) const;
@@ -136,6 +138,49 @@ Err_t CQueue<type>::Dequeue(type* elem)
 
     return RETURN_SUCCESS;
 }
+
+template<class type>
+Err_t CQueue<type>::EnqueueNoCopy(type* elem)
+{
+    if(elem==NULL)
+        return INVALIDE_PARAMET;
+
+    node_t<type>* newNode=new node_t<type>;
+    newNode->element=*elem;
+    newNode->next=NULL;
+
+    if(m_head==NULL||m_tail==NULL) //Nothing in CQueue,put the elem as first node;
+    {
+        m_head=newNode;
+        m_tail=newNode;
+        return RETURN_SUCCESS;
+    }
+
+    m_tail->next=newNode;
+    m_tail=newNode;
+
+    return RETURN_SUCCESS;
+}
+
+
+template<class type>
+Err_t CQueue<type>::DequeueNoCopy(type* elem)
+{
+    if(this->IsEmpty())
+    {
+        std::cout<<"No data in this queue!"<<std::endl;
+        return OPERATOR_FAILED;
+    }
+
+    node_t<type>* current=this->m_head;
+
+    m_head=m_head->next;
+    current->next=NULL;
+    *elem=current->element;
+
+    return RETURN_SUCCESS;
+}
+
 
 template<class type>
 AM_S32 CQueue<type>::Search(type elem)

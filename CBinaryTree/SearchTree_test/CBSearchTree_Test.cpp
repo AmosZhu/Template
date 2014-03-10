@@ -43,6 +43,7 @@ void CBS_Test(void)
     tree1.InorderTraversal();
     tree1.PreorderTraversal();
     tree1.PostorderTraversal();
+    tree1.LevelorderTraversal();
 
     p=tree1.FindMax();
     printf("max=%d\n",p->elem);

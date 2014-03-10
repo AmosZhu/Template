@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include "AmosType.hpp"
+#include "CQueue.hpp"
 
 template<typename type>
 struct nodeType
@@ -33,6 +34,7 @@ public:
     void PreorderTraversal(void);
     void InorderTraversal(void);
     void PostorderTraversal(void);
+    void LevelorderTraversal(void);
     AM_U32 TreeDepth(void);
     AM_U32 TreeNodeCount(void);
     AM_U32 TreeLeavesCount(void);
@@ -55,6 +57,7 @@ protected:
     void inorder(nodeType<type>* p);
     void preorder(nodeType<type>* p);
     void postorder(nodeType<type>* p);
+    void levelorder(nodeType<type>* p,CQueue<nodeType<type>*>* queue);
 private:
     void copyTree(nodeType<type>** copiedTreeNode,nodeType<type>* otherTreeNode);
     void destroy(nodeType<type>** p);
@@ -139,6 +142,15 @@ void CBinaryTree<type>::PostorderTraversal(void)
 {
     std::cout<<"Postorder: ";
     postorder(m_root);
+    std::cout<<std::endl;
+}
+
+template<class type>
+void CBinaryTree<type>::LevelorderTraversal(void)
+{
+    CQueue<nodeType<type>*> queue;
+    std::cout<<"Levelorder: ";
+    levelorder(m_root,&queue);
     std::cout<<std::endl;
 }
 
@@ -265,6 +277,30 @@ void CBinaryTree<type>::postorder(nodeType<type>* p)
 
     return;
 }
+
+
+template<class type>
+void CBinaryTree<type>::levelorder(nodeType<type>* p,CQueue<nodeType<type>* >* queue)
+{
+    nodeType<type>* current;
+    if((p==NULL)||(queue==NULL))
+        return;
+
+    queue->EnqueueNoCopy(&p);
+
+    while(!queue->IsEmpty())
+    {
+        queue->DequeueNoCopy(&current);
+        this->m_printRoute(current->elem);
+        if(current->lLink!=NULL)
+            queue->EnqueueNoCopy(&current->lLink);
+        if(current->rLink!=NULL)
+            queue->EnqueueNoCopy(&current->rLink);
+    }
+
+    return;
+}
+
 
 template<class type>
 AM_U32 CBinaryTree<type>::depth(nodeType<type>* p)

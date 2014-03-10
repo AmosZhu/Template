@@ -5,7 +5,8 @@ ROOTPATH = ../../..
 
 INCLUDE_PATH += $(ROOTPATH)/Template/include/ \
 				$(ROOTPATH)/Template/CBinaryTree/  \
-				$(ROOTPATH)/Template/CStack/
+				$(ROOTPATH)/Template/CStack/	\
+				$(ROOTPATH)/Template/CQueue/
 
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
