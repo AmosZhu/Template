@@ -184,9 +184,7 @@ Err_t CBSearchTree<type>::Insert(type* item)
         {
             tailNode->lLink=newNode;
         }
-
     }
-
     return RETURN_SUCCESS;
 }
 
