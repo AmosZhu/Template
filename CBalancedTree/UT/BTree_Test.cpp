@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-AM_U32 data[]= {11,22,54,32,89,57,40,12,101,220,445,99,532,980,1,4,0};
+AM_U32 data[]= {11,22,54,32,89,57,40,12,101,220,445,99,532,980,1,4,0,290,122,431,76,310,411,1110,2310,5432,1540};
+AM_U32 deleteData[]= {99,101,532,980,220,445};
 
 static void printNode(AM_U32* node)
 {
@@ -48,6 +49,12 @@ void BTree_UT()
     }
 
     btree.PrintTree();
+
+    for(i=0; i<(sizeof(deleteData)/sizeof(AM_U32)); i++)
+    {
+        btree.Delete(&deleteData[i]);
+        btree.PrintTree();
+    }
 
     printf("============================================\n");
     printf("BTree depth is %d\n",btree.TreeDepth());
