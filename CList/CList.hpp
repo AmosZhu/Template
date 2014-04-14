@@ -15,12 +15,12 @@ public:
     ~CList(void);
     void Destroy(void);
 
-    Err_t Insert(type elem);
-    Err_t Delete(type elem);
+    Err_t Insert(type* elem);
+    Err_t Delete(type* elem);
     /***********************************************
     *   Return the position of the element
     ***********************************************/
-    AM_S32 Search(type elem);
+    AM_S32 Search(type* elem);
     /**********************************************
     *   This function set the m_pSearch to m_head
     **********************************************/
@@ -36,9 +36,18 @@ public:
     AM_U32 CountNo(void);
     Err_t Reverse(void);
     void PrintOut(void);
+
+    void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
+    void SetCopyFunc(void (*func)(type* dst,type* src));
+    void SetPrintFunc(void (*func)(type* src));
+
 public:
     CList<type>& operator=(const CList<type>& object);
 
+private:
+    cmp_t (*m_cmpRoute)(type* k1,type* k2);
+    void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
+    void (*m_printRoute)(type* src);
 private:
     node_t<type>* m_head;
     node_t<type>* m_pSearch;  //Use for search
@@ -54,6 +63,9 @@ CList<type>::CList(void)
 {
     m_head=NULL;
     m_pSearch=NULL;
+    m_cmpRoute=NULL;
+    m_cpyRoute=NULL;
+    m_printRoute=NULL;
     count=0;
 }
 
@@ -66,6 +78,9 @@ CList<type>::CList(const CList<type>& object)
     m_head=NULL;
     m_pSearch=NULL;
     count=0;
+    m_cmpRoute=object.m_cmpRoute;
+    m_cpyRoute=object.m_cpyRoute;
+    m_printRoute=object.m_printRoute;
 
     if(!object.IsEmpty())
     {
@@ -76,7 +91,7 @@ CList<type>::CList(const CList<type>& object)
         current=object.m_head;
 
         newNode=new node_t<type>;
-        newNode->element=current->element;
+        m_cpyRoute(&newNode->element,&current->element);
         newNode->next=NULL;
 
         m_head=newNode;
@@ -86,7 +101,7 @@ CList<type>::CList(const CList<type>& object)
         for(; current!=NULL; current=current->next)
         {
             newNode=new node_t<type>;
-            newNode->element=current->element;
+            m_cpyRoute(&newNode->element,&current->element);
             newNode->next=NULL;
             previous->next=newNode;
             previous=previous->next;
@@ -103,13 +118,13 @@ CList<type>::~CList(void)
 }
 
 template<class type>
-Err_t CList<type>::Insert(type elem)
+Err_t CList<type>::Insert(type* elem)
 {
-    if(&elem==NULL)
+    if(elem==NULL)
         return INVALIDE_PARAMET;
 
     node_t<type>* newNode=new node_t<type>;
-    memcpy(&newNode->element,&elem,sizeof(type));
+    m_cpyRoute(&newNode->element,elem);
     newNode->next=NULL;
 
     if(m_head!=NULL) //Nothing in CList,put the elem as first node;
@@ -123,18 +138,18 @@ Err_t CList<type>::Insert(type elem)
 }
 
 template<class type>
-AM_S32 CList<type>::Search(type elem)
+AM_S32 CList<type>::Search(type* elem)
 {
     node_t<type>* current;
     AM_S32 position = 0;
 
-    if(&elem==NULL)
+    if(elem==NULL)
         return -1;
 
     if(!this->IsEmpty())
     {
         for(current=this->m_head; current!=NULL; current=current->next,position++)
-            if(current->element==elem)
+            if(m_cmpRoute(&current->element,elem)==EQUAL)
                 return position;
     }
 
@@ -145,10 +160,9 @@ AM_S32 CList<type>::Search(type elem)
 *
 *   There two different strategy to delete an element
 *
-*
 ***********************************************************/
 template<class type>
-Err_t CList<type>::Delete(type elem)
+Err_t CList<type>::Delete(type* elem)
 {
     if(&elem==NULL)
         return INVALIDE_PARAMET;
@@ -158,7 +172,7 @@ Err_t CList<type>::Delete(type elem)
     current=m_head;
 
     BOOL found=FALSE;
-    if(m_head->element==elem)
+    if(m_cmpRoute(&current->element,elem)==EQUAL)
     {
         m_head=m_head->next;
         delete current;
@@ -168,7 +182,7 @@ Err_t CList<type>::Delete(type elem)
     }
     while(!found&&current!=NULL)
     {
-        if(current->element==elem)
+        if(m_cmpRoute(&current->element,elem)==EQUAL)
         {
             found=TRUE;
             continue;
@@ -180,25 +194,6 @@ Err_t CList<type>::Delete(type elem)
     if(current==NULL)
         return OPERATOR_FAILED;
 
-#if 0 //This method will leave a zero value... Why?
-    if(current->next!=NULL)
-    {
-        printf("Next!=NULL, elem=%d\n",elem);
-        current->element=current->next->element;
-        temp=current->next;
-        current->next=current->next->next;
-        delete temp;
-        temp=NULL;
-    }
-    else
-    {
-        printf("Next==NULL, elem=%d\n",elem);
-        temp=current;
-        delete current;
-        current=NULL;
-    }
-    return RETURN_SUCCESS;
-#else
     if(current->next!=NULL)
     {
         temp->next=current->next;
@@ -211,7 +206,6 @@ Err_t CList<type>::Delete(type elem)
     count--;
     return RETURN_SUCCESS;
 
-#endif /* Modify by Amos.zhu */
 }
 
 /*********************************************************************
@@ -243,7 +237,7 @@ Err_t CList<type>::GetElemNext(type* elem)
     if(elem==NULL)
         return INVALIDE_PARAMET;
 
-    memcpy(elem,&m_pSearch->element,sizeof(type));
+    m_cpyRoute(elem,&m_pSearch->element);
     m_pSearch=m_pSearch->next;
     return RETURN_SUCCESS;
 }
@@ -260,19 +254,6 @@ BOOL CList<type>::IsEmpty(void) const
 template<class type>
 AM_U32 CList<type>::CountNo(void)
 {
-#if 0
-    AM_U32 count=0;
-    node_t<type>* current;
-    if(!this->IsEmpty())
-    {
-        current=m_head;
-        while(current!=NULL)
-        {
-            count++;
-            current=current->next;
-        }
-    }
-#endif /* Modify by Amos.zhu */
     return count;
 }
 
@@ -297,6 +278,25 @@ void CList<type>::Destroy(void)
 }
 
 template<class type>
+void CList<type>::SetCompareFunc(cmp_t (*func)(type* k1,type* k2))
+{
+    m_cmpRoute=func;
+}
+
+template<class type>
+void CList<type>::SetCopyFunc(void (*func)(type* dst,type* src))
+{
+    m_cpyRoute=func;
+}
+
+template<class type>
+void CList<type>::SetPrintFunc(void (*func)(type* src))
+{
+    m_printRoute=func;
+}
+
+
+template<class type>
 void CList<type>::PrintOut(void)
 {
     if(this->IsEmpty())
@@ -308,7 +308,7 @@ void CList<type>::PrintOut(void)
 
     for(current=this->m_head; current!=NULL; current=current->next)
     {
-        std::cout<<current->element<<" ";
+        m_printRoute(&current->element);
     }
     std::cout<<std::endl;
 }
@@ -356,6 +356,9 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
     m_head=NULL;
     m_pSearch=NULL;
     count=0;
+    m_cmpRoute=object.m_cmpRoute;
+    m_cpyRoute=object.m_cpyRoute;
+    m_printRoute=object.m_printRoute;
 
     if(!object.IsEmpty())
     {
@@ -364,6 +367,7 @@ CList<type>& CList<type>::operator=(const CList<type>& object)
         node_t<type>* previous;
 
         current=object.m_head;
+
 
         newNode=new node_t<type>;
         newNode->element=current->element;
@@ -400,7 +404,7 @@ std::ostream& operator<<(std::ostream& output,const CList<T>& object)
 
     for(current=object.m_head; current!=NULL; current=current->next)
     {
-        output<<current->element<<" ";
+        object.m_printRoute(&current->element);
     }
     output<<std::endl;
     return output;
