@@ -36,7 +36,6 @@ void ReverseTest(void)
     list1.SetCopyFunc(copyFunc);
     list1.SetCompareFunc(cmpFunc);
     list1.SetPrintFunc(printNode);
-    CList<AM_U32> list3(list1);
 
     int i=0;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
@@ -44,7 +43,8 @@ void ReverseTest(void)
         if(list1.Insert(&data[i])!=RETURN_SUCCESS)
             printf("data[%d]=%d insert failed!\n",i,data[i]);
     }
-    list3=list2=list1;
+    list2=list1;
+    CList<AM_U32> list3(list1);
     std::cout<<"list3: "<<list3;
     std::cout<<"list2: "<<list2;
     for(i=0; i<list1.CountNo(); i++)
@@ -61,7 +61,7 @@ void SearchTest(void)
     list1.SetCompareFunc(cmpFunc);
     list1.SetPrintFunc(printNode);
     int i=0;
-    AM_S32 pos;
+    AM_U32* pos=NULL;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
     {
         if(list1.Insert(&data[i])!=RETURN_SUCCESS)
@@ -72,9 +72,9 @@ void SearchTest(void)
 
     for(i=0; i<sizeof(data_s)/sizeof(AM_U32); i++)
     {
-        if((pos=list1.Search(&data_s[i]))!=-1)
+        if((pos=list1.Search(&data_s[i]))!=NULL)
         {
-            printf("%u find at %d\n",data_s[i],pos);
+            printf("%u find at %d\n",data_s[i],*pos);
         }
         else
         {

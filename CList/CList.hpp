@@ -20,7 +20,7 @@ public:
     /***********************************************
     *   Return the position of the element
     ***********************************************/
-    AM_S32 Search(type* elem);
+    type* Search(type* elem);
     /**********************************************
     *   This function set the m_pSearch to m_head
     **********************************************/
@@ -44,6 +44,9 @@ public:
 public:
     CList<type>& operator=(const CList<type>& object);
 
+public:
+    template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
+
 private:
     cmp_t (*m_cmpRoute)(type* k1,type* k2);
     void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
@@ -53,8 +56,6 @@ private:
     node_t<type>* m_pSearch;  //Use for search
     AM_U32 count; //Number of elements;
 
-public:
-    template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
 };
 
 
@@ -138,22 +139,21 @@ Err_t CList<type>::Insert(type* elem)
 }
 
 template<class type>
-AM_S32 CList<type>::Search(type* elem)
+type* CList<type>::Search(type* elem)
 {
     node_t<type>* current;
-    AM_S32 position = 0;
 
     if(elem==NULL)
-        return -1;
+        return NULL;
 
     if(!this->IsEmpty())
     {
-        for(current=this->m_head; current!=NULL; current=current->next,position++)
+        for(current=this->m_head; current!=NULL; current=current->next)
             if(m_cmpRoute(&current->element,elem)==EQUAL)
-                return position;
+                return &current->element;
     }
 
-    return -1;
+    return NULL;
 }
 
 /***********************************************************
@@ -302,6 +302,7 @@ void CList<type>::PrintOut(void)
     if(this->IsEmpty())
     {
         std::cout<<"It is an empty list!"<<std::endl;
+        return;
     }
 
     node_t<type>* current;
