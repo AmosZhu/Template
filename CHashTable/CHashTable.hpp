@@ -1,6 +1,16 @@
 #ifndef _CHASHTABLE_HPP_
 #define _CHASHTABLE_HPP_
 
+
+/**************************************************************
+*
+*   CHashTable seperate chainning
+*   @Author: Amos.Zhu
+*   @2014-4-17
+*
+**************************************************************/
+
+
 #include "AmosType.hpp"
 #include "CList.hpp"
 #include <iostream>
@@ -37,8 +47,8 @@ public:
 
 private:
     AM_U32 (*m_hashRoute)(type* elem);
-    CList<type>* list;
-    AM_U32 tblsize;
+    CList<type>* m_list;
+    AM_U32 m_size;
 
 
 };
@@ -46,16 +56,16 @@ private:
 template<class type>
 CHashTable<type>::CHashTable()
 {
-	tblsize=0;
-    list=NULL;
+    m_size=0;
+    m_list=NULL;
     m_hashRoute=NULL;
 }
 
 template<class type>
 CHashTable<type>::CHashTable(AM_U32 size)
 {
-	tblsize=size;
-    list=new CList<type>[size];
+    m_size=size;
+    m_list=new CList<type>[size];
     m_hashRoute=NULL;
 }
 
@@ -66,17 +76,17 @@ CHashTable<type>::CHashTable(const CHashTable<type>& object)
     if(this==&object)
         return;
 
-    tblsize=0;
-    list=NULL;
+    m_size=0;
+    m_list=NULL;
     m_hashRoute=NULL;
 
     if(!object.IsEmpty())
     {
-    	tblsize=object.tblsize;
-    	list=new CList<type>[tblsize];
-        for(idx=0; idx<object.tblsize; idx++)
+        m_size=object.m_size;
+        m_list=new CList<type>[m_size];
+        for(idx=0; idx<object.m_size; idx++)
         {
-            list[idx]=object.list[idx];
+            m_list[idx]=object.m_list[idx];
         }
     }
 
@@ -93,33 +103,33 @@ template<class type>
 void CHashTable<type>::Destroy(void)
 {
     AM_U32 idx;
-    for(idx=0; idx<tblsize; idx++)
+    for(idx=0; idx<m_size; idx++)
     {
-        list[idx].Destroy();
+        m_list[idx].Destroy();
     }
 
-    delete[] list;
+    delete[] m_list;
 
-    tblsize=0;
-    list=NULL;
+    m_size=0;
+    m_list=NULL;
 }
 
 template<class type>
 BOOL CHashTable<type>::IsEmpty(void) const
 {
-	if(tblsize==0||list==NULL)
-		return TRUE;
+    if(m_size==0||m_list==NULL)
+        return TRUE;
 
-	return FALSE;
-	}
+    return FALSE;
+}
 
 template<class type>
 void CHashTable<type>::SetCompareFunc(cmp_t (*func)(type* k1,type* k2))
 {
     AM_U32 idx;
-    for(idx=0; idx<tblsize; idx++)
+    for(idx=0; idx<m_size; idx++)
     {
-        list[idx].SetCompareFunc(func);
+        m_list[idx].SetCompareFunc(func);
     }
 }
 
@@ -127,9 +137,9 @@ template<class type>
 void CHashTable<type>::SetCopyFunc(void (*func)(type* dst,type* src))
 {
     AM_U32 idx;
-    for(idx=0; idx<tblsize; idx++)
+    for(idx=0; idx<m_size; idx++)
     {
-        list[idx].SetCopyFunc(func);
+        m_list[idx].SetCopyFunc(func);
     }
 }
 
@@ -137,9 +147,9 @@ template<class type>
 void CHashTable<type>::SetPrintFunc(void (*func)(type* src))
 {
     AM_U32 idx;
-    for(idx=0; idx<tblsize; idx++)
+    for(idx=0; idx<m_size; idx++)
     {
-        list[idx].SetPrintFunc(func);
+        m_list[idx].SetPrintFunc(func);
     }
 
 }
@@ -159,10 +169,10 @@ Err_t CHashTable<type>::Insert(type * elem)
 
     pos=m_hashRoute(elem);
 
-    if(list[pos].Search(elem)!=NULL)
+    if(m_list[pos].Search(elem)!=NULL)
         return RETURN_SUCCESS;
 
-    list[pos].Insert(elem);
+    m_list[pos].Insert(elem);
 
     return RETURN_SUCCESS;
 }
@@ -176,7 +186,7 @@ Err_t CHashTable<type>::Delete(type * elem)
 
     pos=m_hashRoute(elem);
 
-    if(list[pos].Delete(elem)==OPERATOR_FAILED)
+    if(m_list[pos].Delete(elem)==OPERATOR_FAILED)
         return OPERATOR_FAILED;
 
     return RETURN_SUCCESS;
@@ -191,18 +201,17 @@ type* CHashTable<type>::Search(type * elem)
 
     pos=m_hashRoute(elem);
 
-    return list[pos].Search(elem);
+    return m_list[pos].Search(elem);
 }
 
 template<class type>
 void CHashTable<type>::PrintOut(void)
 {
     AM_U32 idx;
-    for(idx=0; idx<tblsize; idx++)
+    for(idx=0; idx<m_size; idx++)
     {
         printf("[%d]:",idx);
-        list[idx].PrintOut();
-        //printf("\n");
+        m_list[idx].PrintOut();
     }
 }
 
@@ -213,16 +222,16 @@ CHashTable<type>& CHashTable<type>::operator=(const CHashTable<type>& object)
     if(this==&object)
         return *this;
 
-    tblsize=0;
-    list=NULL;
+    m_size=0;
+    m_list=NULL;
 
     if(!object.IsEmpty())
     {
-    	tblsize=object.tblsize;
-    	list=new CList<type>[tblsize];
-        for(idx=0; idx<object.tblsize; idx++)
+        m_size=object.m_size;
+        m_list=new CList<type>[m_size];
+        for(idx=0; idx<object.m_size; idx++)
         {
-            list[idx]=object.list[idx];
+            m_list[idx]=object.m_list[idx];
         }
     }
     return *this;
@@ -232,11 +241,10 @@ template<typename T>
 std::ostream& operator<<(std::ostream& output,const CHashTable<T>& object)
 {
     AM_U32 idx;
-    for(idx=0; idx<object.tblsize; idx++)
+    for(idx=0; idx<object.m_size; idx++)
     {
         output<<"["<<idx<<"]";
-        object.list[idx].PrintOut();
-        //output<<std::endl;
+        object.m_list[idx].PrintOut();
     }
     return output;
 }
