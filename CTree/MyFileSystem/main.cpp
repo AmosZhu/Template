@@ -17,7 +17,7 @@ int main(int argc,char* argv[])
     }
 #endif /* Modify by Amos.zhu */
     CFileSystem fileSystem1(argv[1]);
-	fileSystem1.Destroy();
+	//fileSystem1.Destroy();
 	fileSystem1.PrintOut();
 #if 0
     CFileSystem fileSystem2(fileSystem1);
@@ -27,6 +27,6 @@ int main(int argc,char* argv[])
     fileSystem1=fileSystem2;
     //fileSystem2.PrintOut();
     fileSystem1.PrintOut();
-#endif 
+#endif
     return 0;
 }

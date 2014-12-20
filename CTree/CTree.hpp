@@ -27,7 +27,8 @@ class CTree
 public:
     CTree(void);
     CTree(void (*func)(type));
-    CTree(const CTree<type>* object);
+    CTree(const CTree<type>& object);
+    CTree(const CTree<type>&& object);
     ~CTree(void);
 
 public:
@@ -41,6 +42,7 @@ public:
 
 public:
     const CTree<type>& operator=(const CTree<type>& object);
+    const CTree<type>& operator=(const CTree<type>&& object);
 
 
 
@@ -49,7 +51,7 @@ private:
     void copyTree(TreeNode_t<type>** dst,TreeNode_t<type>* src);
     void destroy(TreeNode_t<type>** current);
 
-private:
+protected:
     TreeNode_t<type>* m_root;
     /*
     *   print pointer here
@@ -61,24 +63,24 @@ private:
 template<class type>
 CTree<type>::CTree(void)
 {
-    m_root=NULL;
-    m_printNode=NULL;
+    m_root=nullptr;
+    m_printNode=nullptr;
 }
 
 template<class type>
 CTree<type>::CTree(void (*func)(type))
 {
-    m_root=NULL;
+    m_root=nullptr;
     m_printNode=func;
 }
 
 template<class type>
-CTree<type>::CTree(const CTree<type>* object)
+CTree<type>::CTree(const CTree<type>& object)
 {
-    if((object==NULL)||(object->IsEmpty()))
+    if(object->IsEmpty())
     {
-        m_root=NULL;
-        m_printNode=NULL;
+        m_root=nullptr;
+        m_printNode=nullptr;
         return;
     }
 
@@ -89,17 +91,30 @@ CTree<type>::CTree(const CTree<type>* object)
 }
 
 template<class type>
+CTree<type>::CTree(const CTree<type>&& object)
+{
+    m_printNode=object->m_printNode;
+    m_root=object->m_root;
+
+    object->m_printNode=nullptr;
+    object->m_root=nullptr;
+
+    return;
+}
+
+
+template<class type>
 CTree<type>::~CTree(void)
 {
     destroy(&m_root);
-    m_root=NULL;
-    m_printNode=NULL;
+    m_root=nullptr;
+    m_printNode=nullptr;
 }
 
 template<class type>
 void CTree<type>::SetPrintFunc(void (*func)(type))
 {
-    if(func==NULL)
+    if(func==nullptr)
         return;
     m_printNode=func;
 }
@@ -108,7 +123,7 @@ void CTree<type>::SetPrintFunc(void (*func)(type))
 template<class type>
 Err_t CTree<type>::SetRoot(TreeNode_t<type>* pRoot)
 {
-    if(pRoot==NULL)
+    if(pRoot==nullptr)
         return INVALIDE_PARAMET;
 
     m_root=pRoot;
@@ -119,7 +134,7 @@ Err_t CTree<type>::SetRoot(TreeNode_t<type>* pRoot)
 template<class type>
 Err_t CTree<type>::AddFirstChild(TreeNode_t<type>* pParent,TreeNode_t<type>* pChild)
 {
-    if((pParent==NULL)||(pChild==NULL))
+    if((pParent==nullptr)||(pChild==nullptr))
         return INVALIDE_PARAMET;
 
     pParent->firstChild=pChild;
@@ -129,7 +144,7 @@ Err_t CTree<type>::AddFirstChild(TreeNode_t<type>* pParent,TreeNode_t<type>* pCh
 template<class type>
 Err_t CTree<type>::AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* pNext)
 {
-    if((pCurrent==NULL)||(pNext==NULL))
+    if((pCurrent==nullptr)||(pNext==nullptr))
         return INVALIDE_PARAMET;
 
     pCurrent->nextSibling=pNext;
@@ -139,7 +154,7 @@ Err_t CTree<type>::AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* p
 template<class type>
 BOOL CTree<type>::IsEmpty(void) const
 {
-    if(m_root==NULL)
+    if(m_root==nullptr)
         return TRUE;
 
     return FALSE;
@@ -159,13 +174,13 @@ void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
 {
     AM_U32 count=0;
     AM_U32 nextHeight=0;
-    if(current==NULL)
+    if(current==nullptr)
         return;
 
     for(count=0; count<height; count++)
         std::cout<<"	";
 
-    if(m_printNode!=NULL)
+    if(m_printNode!=nullptr)
     {
         m_printNode(current->elem);
     }
@@ -180,9 +195,9 @@ template<class type>
 void CTree<type>::copyTree(TreeNode_t<type>** dst,TreeNode_t<type>* src)
 {
     TreeNode_t<type>* newNode;
-    if(src==NULL)
+    if(src==nullptr)
     {
-        *dst=NULL;
+        *dst=nullptr;
         return;
     }
     *dst=new TreeNode_t<type>;
@@ -194,7 +209,7 @@ void CTree<type>::copyTree(TreeNode_t<type>** dst,TreeNode_t<type>* src)
 template<class type>
 void CTree<type>::destroy(TreeNode_t<type>** current)
 {
-    if((current==NULL)||(*current==NULL))
+    if((current==nullptr)||(*current==nullptr))
     {
         return;
     }
@@ -202,7 +217,7 @@ void CTree<type>::destroy(TreeNode_t<type>** current)
     destroy(&(*current)->firstChild);
     destroy(&(*current)->nextSibling);
     delete *current;
-    *current=NULL;
+    *current=nullptr;
     return;
 }
 
@@ -212,10 +227,12 @@ const CTree<type>& CTree<type>::operator=(const CTree<type>& object)
     if(this==&object)
         return *this;
 
+    destroy(&m_root);
+
     if(object.IsEmpty())
     {
-        m_root=NULL;
-        m_printNode=NULL;
+        m_root=nullptr;
+        m_printNode=nullptr;
         return *this;
     }
 
@@ -225,5 +242,28 @@ const CTree<type>& CTree<type>::operator=(const CTree<type>& object)
     return *this;
 }
 
+template<class type>
+const CTree<type>& CTree<type>::operator=(const CTree<type>&& object)
+{
+    if(this==&object)
+        return *this;
+
+    destroy(&m_root);
+
+    if(object.IsEmpty())
+    {
+        m_root=nullptr;
+        m_printNode=nullptr;
+        return *this;
+    }
+
+    m_printNode=object->m_printNode;
+    m_root=object->m_root;
+
+    object->m_printNode=nullptr;
+    object->m_root=nullptr;
+
+    return *this;
+}
 
 #endif

@@ -1,5 +1,5 @@
 CC = g++
-LIBS = 
+LIBS =
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../../include/ \
 				../../CTree/   \
@@ -8,6 +8,13 @@ INCLUDE_PATH += ../../include/ \
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 
 CFLAGS += $(foreach dir, $(INCLUDE_PATH), -I$(dir))
+
+ifeq "$(CXXVERSION)" "4.6.3"
+	CFLAGS += -std=c++0x
+else
+	CFLAGS += -std=c++11
+endif
+
 TARGET = FileSystem
 
 
