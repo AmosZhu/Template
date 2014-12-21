@@ -26,23 +26,25 @@ class CTree
 {
 public:
     CTree(void);
-    CTree(void (*func)(type));
+    CTree(void (*func)(type* src));
     CTree(const CTree<type>& object);
-    CTree(const CTree<type>&& object);
+    CTree(CTree<type>&& object);
     ~CTree(void);
 
 public:
     Err_t AddFirstChild(TreeNode_t<type>* pParent,TreeNode_t<type>* pChild);
     Err_t AddNextSibling(TreeNode_t<type>* pCurrent,TreeNode_t<type>* pNext);
     Err_t SetRoot(TreeNode_t<type>* pRoot);
-    void SetPrintFunc(void (*func)(type));
+    Err_t SetRoot(type* elem);
+    void SetPrintFunc(void (*func)(type* src));
+    void SetCopyFunc(void (*func)(type* dst,type* src));
 
     BOOL IsEmpty(void) const;
     void PreOrderTraversal(void);
 
 public:
     const CTree<type>& operator=(const CTree<type>& object);
-    const CTree<type>& operator=(const CTree<type>&& object);
+    const CTree<type>& operator=(CTree<type>&& object);
 
 
 
@@ -52,11 +54,12 @@ private:
     void destroy(TreeNode_t<type>** current);
 
 protected:
-    TreeNode_t<type>* m_root;
+    TreeNode_t<type>* m_root=nullptr;
     /*
     *   print pointer here
     */
-    void (*m_printNode)(type);
+    void (*m_printNode)(type* src)=nullptr;
+    void (*m_cpyRoute)(type* dst,type* src)=nullptr;
 
 };
 
@@ -65,39 +68,45 @@ CTree<type>::CTree(void)
 {
     m_root=nullptr;
     m_printNode=nullptr;
+    m_cpyRoute=nullptr;
 }
 
 template<class type>
-CTree<type>::CTree(void (*func)(type))
+CTree<type>::CTree(void (*func)(type* src))
 {
     m_root=nullptr;
+    m_cpyRoute=nullptr;
     m_printNode=func;
 }
 
 template<class type>
 CTree<type>::CTree(const CTree<type>& object)
 {
-    if(object->IsEmpty())
+    if(object.IsEmpty())
     {
         m_root=nullptr;
         m_printNode=nullptr;
+        m_cpyRoute=nullptr;
         return;
     }
 
-    m_printNode=object->m_printNode;
-    copyTree(&m_root,object->m_root);
+    m_printNode=object.m_printNode;
+    m_cpyRoute=object.m_cpyRoute;
+    copyTree(&m_root,object.m_root);
 
     return;
 }
 
 template<class type>
-CTree<type>::CTree(const CTree<type>&& object)
+CTree<type>::CTree(CTree<type>&& object)
 {
-    m_printNode=object->m_printNode;
-    m_root=object->m_root;
+    m_printNode=object.m_printNode;
+    m_cpyRoute=object.m_cpyRoute;
+    m_root=object.m_root;
 
-    object->m_printNode=nullptr;
-    object->m_root=nullptr;
+    object.m_printNode=nullptr;
+    object.m_root=nullptr;
+    object.m_cpyRoute=nullptr;
 
     return;
 }
@@ -109,16 +118,25 @@ CTree<type>::~CTree(void)
     destroy(&m_root);
     m_root=nullptr;
     m_printNode=nullptr;
+    m_cpyRoute=nullptr;
 }
 
 template<class type>
-void CTree<type>::SetPrintFunc(void (*func)(type))
+void CTree<type>::SetPrintFunc(void (*func)(type* src))
 {
     if(func==nullptr)
         return;
+
     m_printNode=func;
 }
 
+template<class type>
+void CTree<type>::SetCopyFunc(void (*func)(type* dst,type* src))
+{
+    if(func==nullptr)
+        return;
+    m_cpyRoute=func;
+}
 
 template<class type>
 Err_t CTree<type>::SetRoot(TreeNode_t<type>* pRoot)
@@ -127,6 +145,24 @@ Err_t CTree<type>::SetRoot(TreeNode_t<type>* pRoot)
         return INVALIDE_PARAMET;
 
     m_root=pRoot;
+    return RETURN_SUCCESS;
+}
+
+template<class type>
+Err_t CTree<type>::SetRoot(type* elem)
+{
+    TreeNode_t<type>* newNode;
+
+    if(elem==nullptr)
+        return INVALIDE_PARAMET;
+
+    newNode=new TreeNode_t<type>;
+    newNode->firstChild=nullptr;
+    newNode->nextSibling=nullptr;
+    m_cpyRoute(&newNode->elem,elem);
+
+    m_root=newNode;
+
     return RETURN_SUCCESS;
 }
 
@@ -166,7 +202,7 @@ void CTree<type>::PreOrderTraversal(void)
     if(IsEmpty())
         return;
 
-    preOrder(m_root,0);
+    preOrder(this->m_root,0);
 }
 
 template<class type>
@@ -182,7 +218,7 @@ void CTree<type>::preOrder(TreeNode_t<type>* current,AM_U32 height)
 
     if(m_printNode!=nullptr)
     {
-        m_printNode(current->elem);
+        m_printNode(&current->elem);
     }
     nextHeight=height+1;
     preOrder(current->firstChild,nextHeight);
@@ -201,7 +237,7 @@ void CTree<type>::copyTree(TreeNode_t<type>** dst,TreeNode_t<type>* src)
         return;
     }
     *dst=new TreeNode_t<type>;
-    memcpy(&(*dst)->elem,&src->elem,sizeof(type));
+    m_cpyRoute(&(*dst)->elem,&src->elem);
     copyTree(&(*dst)->firstChild,src->firstChild);
     copyTree(&(*dst)->nextSibling,src->nextSibling);
 }
@@ -233,17 +269,19 @@ const CTree<type>& CTree<type>::operator=(const CTree<type>& object)
     {
         m_root=nullptr;
         m_printNode=nullptr;
+        m_cpyRoute=nullptr;
         return *this;
     }
 
     m_printNode=object.m_printNode;
+    m_cpyRoute=object.m_cpyRoute;
     copyTree(&m_root,object.m_root);
 
     return *this;
 }
 
 template<class type>
-const CTree<type>& CTree<type>::operator=(const CTree<type>&& object)
+const CTree<type>& CTree<type>::operator=(CTree<type>&& object)
 {
     if(this==&object)
         return *this;
@@ -254,14 +292,17 @@ const CTree<type>& CTree<type>::operator=(const CTree<type>&& object)
     {
         m_root=nullptr;
         m_printNode=nullptr;
+        m_cpyRoute=nullptr;
         return *this;
     }
 
-    m_printNode=object->m_printNode;
-    m_root=object->m_root;
+    m_printNode=object.m_printNode;
+    m_cpyRoute=object.m_cpyRoute;
+    m_root=object.m_root;
 
-    object->m_printNode=nullptr;
-    object->m_root=nullptr;
+    object.m_printNode=nullptr;
+    object.m_root=nullptr;
+    object.m_cpyRoute=nullptr;
 
     return *this;
 }

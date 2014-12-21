@@ -40,7 +40,7 @@
         node->elem.type=DIRECTORY;\
     else\
         node->elem.type=NORMALFILE;\
- 
+
 
 #define COPY_NAME(dst,src) \
     AM_U32 dstNameLen=strlen(src);\
@@ -57,14 +57,20 @@
 /******************************************************
 *                 Internal function
 ******************************************************/
-static void printNode(file_t node)
+static void printNode(file_t* node)
 {
-    std::cout<<node.name;
-    if(node.type==NORMALFILE)
+    std::cout<<node->name;
+    if(node->type==NORMALFILE)
         std::cout<<"*"<<std::endl;
-    else if(node.type==DIRECTORY)
+    else if(node->type==DIRECTORY)
         std::cout<<"/"<<std::endl;
 }
+
+static void copyFunc(file_t* dst,file_t* src)
+{
+    memcpy(dst,src,sizeof(file_t));
+}
+
 
 /********************************************************************
 *
@@ -183,6 +189,7 @@ Err_t CFileSystem::createFileSystem(const char* path)
     abPath=getPath(path);
 
     m_sysTree=new CTree<file_t>(printNode);
+    m_sysTree->SetCopyFunc(copyFunc);
     /*
     *   Firstly, Add root
     */
