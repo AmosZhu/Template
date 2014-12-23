@@ -15,6 +15,7 @@ public:
     CPolynomialHeap(const CPolynomialHeap<type>&& object);
     ~CPolynomialHeap(void);
 
+    BOOL IsEmpty() const;
     Err_t Add(type* elem);
     void PrintOut(void);
 
@@ -26,7 +27,7 @@ public:
     static void SetPrintFunc(void (*func)(type* src));
 
 private:
-    CDaryPolyHeap<type>* combineTree(CDaryPolyHeap<type>* t1, CDaryPolyHeap<type>* t2);
+    static CDaryPolyHeap<type>* combineTree(CDaryPolyHeap<type>* t1,CDaryPolyHeap<type>* t2);
 
 private:
     AM_U32 m_deepth;
@@ -70,6 +71,19 @@ CPolynomialHeap<type>::~CPolynomialHeap(void)
         delete m_root;
     }
 }
+
+template<class type>
+BOOL CPolynomialHeap<type>::IsEmpty() const
+{
+    if(m_root==nullptr)
+        return TRUE;
+
+    if(m_root->size()==0)
+        return TRUE;
+
+    return FALSE;
+}
+
 
 template<class type>
 void CPolynomialHeap<type>::PrintOut(void)
@@ -144,12 +158,123 @@ Err_t CPolynomialHeap<type>::Add(type* elem)
 template<class type>
 CPolynomialHeap<type>* CPolynomialHeap<type>::Merge(CPolynomialHeap<type>* heap1,CPolynomialHeap<type>* heap2)
 {
-    return nullptr;
+    CPolynomialHeap<type>* resHeap;
+    AM_U32 valC,val1,val2;
+    AM_U32 i=0,j=0;
+    AM_U32 idx;
+    CDaryPolyHeap<type>* newSubHeap=nullptr;
+    CDaryPolyHeap<type>* carry=nullptr;
+    if(heap1==nullptr||heap2==nullptr)
+        return nullptr;
+
+    if(heap1->IsEmpty()||heap2->IsEmpty())
+        return nullptr;
+
+    resHeap=new CPolynomialHeap<type>();
+    resHeap->m_root=new std::vector<CDaryPolyHeap<type>*>();
+    while(i<heap1->m_root->size()||j<heap2->m_root->size())
+    {
+        val1=0;
+        val2=0;
+        valC=0;
+        if(i<heap1->m_root->size()&&heap1->m_root->at(i)!=nullptr)
+        {
+            val1=1;
+        }
+
+        if(j<heap2->m_root->size()&&heap2->m_root->at(j)!=nullptr)
+        {
+            val2=2;
+        }
+
+        if(carry!=nullptr)
+        {
+            valC=4;
+        }
+
+        switch(val1+val2+valC)
+        {
+            case 0:
+            {
+                /*
+                *   Do nothing;
+                */
+            }
+            break;
+            case 1:
+            {
+                newSubHeap=new CDaryPolyHeap<type>();
+                *newSubHeap=*heap1->m_root->at(i); //copy
+                resHeap->m_root->push_back(newSubHeap);
+            }
+            break;
+            case 2:
+            {
+                newSubHeap=new CDaryPolyHeap<type>();
+                *newSubHeap=*heap2->m_root->at(j); //copy
+                resHeap->m_root->push_back(newSubHeap);
+            }
+            break;
+            case 3:
+            {
+                carry=combineTree(heap1->m_root->at(i),heap2->m_root->at(j)); //copy
+                resHeap->m_root->push_back(nullptr);
+            }
+            break;
+            case 4:
+            {
+                resHeap->m_root->push_back(carry);
+                carry=nullptr;
+            }
+            break;
+            case 5:
+            {
+                newSubHeap=combineTree(heap1->m_root->at(i),carry); //newSubHeap for temporary carry
+                delete carry;
+                carry=newSubHeap;
+                resHeap->m_root->push_back(nullptr);
+            }
+            break;
+            case 6:
+            {
+                newSubHeap=combineTree(heap2->m_root->at(j),carry); //newSubHeap for temporary carry
+                delete carry;
+                carry=newSubHeap;
+                resHeap->m_root->push_back(nullptr);
+            }
+            break;
+            case 7:
+            {
+                newSubHeap=combineTree(heap1->m_root->at(i),heap2->m_root->at(j)); //newSubHeap for temporary carry
+                resHeap->m_root->push_back(carry);
+                carry=newSubHeap;
+            }
+            break;
+
+        }
+
+        if(i<heap1->m_root->size())
+        {
+            i++;
+        }
+        if(j<heap2->m_root->size())
+        {
+            j++;
+        }
+
+    }
+
+    if(carry!=nullptr)
+    {
+        resHeap->m_root->push_back(carry);
+    }
+
+    return resHeap;
 }
 
 
 template<class type>
-CDaryPolyHeap<type>* CPolynomialHeap<type>::combineTree(CDaryPolyHeap<type>* t1, CDaryPolyHeap<type>* t2)
+CDaryPolyHeap<type>* CPolynomialHeap<type>::combineTree(CDaryPolyHeap<type>* t1,CDaryPolyHeap<type>* t2)
 {
     cmp_t cmpRes;
     if(t1==nullptr)

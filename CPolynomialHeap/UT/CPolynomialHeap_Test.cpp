@@ -1,6 +1,7 @@
 #include "CPolynomialHeap_Test.hpp"
 
 AM_U32 data[] = {13,55,43,4,123,98,67,444,777,223,100};
+AM_U32 data1[] = {56,123,555,55,25,90};
 
 static void printNode(AM_U32* node)
 {
@@ -32,8 +33,8 @@ void BasicTest(void)
     CPolynomialHeap<AM_U32>::SetCompareFunc(cmpFunc);
     CPolynomialHeap<AM_U32>::SetCopyFunc(copyFunc);
 
-    CPolynomialHeap<AM_U32> heap1;
-
+    CPolynomialHeap<AM_U32> heap1,heap2;
+    CPolynomialHeap<AM_U32>* heap3;
 
     int i=0;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
@@ -42,6 +43,20 @@ void BasicTest(void)
             printf("data[%d]=%d insert failed!\n",i,data[i]);
     }
 
+    for(i=0; i<sizeof(data1)/sizeof(AM_U32); i++)
+    {
+        if(heap2.Add(&data1[i])!=RETURN_SUCCESS)
+            printf("data[%d]=%d insert failed!\n",i,data[i]);
+    }
+
     heap1.PrintOut();
 
+    printf("=================>Heap2<==================\n");
+    heap2.PrintOut();
+
+    printf("=================>Merge<==================\n");
+
+    heap3=CPolynomialHeap<AM_U32>::Merge(&heap1,&heap2);
+    if(heap3!=nullptr)
+        heap3->PrintOut();
 }
