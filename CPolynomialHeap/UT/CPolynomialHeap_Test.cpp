@@ -59,4 +59,27 @@ void BasicTest(void)
     heap3=CPolynomialHeap<AM_U32>::Merge(&heap1,&heap2);
     if(heap3!=nullptr)
         heap3->PrintOut();
+
+    printf("=================>Heap4<==================\n");
+    CPolynomialHeap<AM_U32> heap4(heap1);
+    heap4.PrintOut();
+
+    printf("=================>Heap5,1<==================\n");
+    CPolynomialHeap<AM_U32> heap5(std::move(heap1));
+    heap5.PrintOut();
+    heap1.PrintOut();
+
+    printf("=================>Heap4<==================\n");
+    heap4=*heap3;
+    heap4.PrintOut();
+
+    printf("=================>Heap1,4<==================\n");
+
+    heap1=std::move(heap4);
+    heap1.PrintOut();
+    heap4.PrintOut();
+
+
+
+
 }

@@ -12,7 +12,7 @@ class CPolynomialHeap
 public:
     CPolynomialHeap(void);
     CPolynomialHeap(const CPolynomialHeap<type>& object);
-    CPolynomialHeap(const CPolynomialHeap<type>&& object);
+    CPolynomialHeap(CPolynomialHeap<type>&& object);
     ~CPolynomialHeap(void);
 
     BOOL IsEmpty() const;
@@ -26,11 +26,17 @@ public:
     static void SetCopyFunc(void (*func)(type* dst,type* src));
     static void SetPrintFunc(void (*func)(type* src));
 
+public:
+    const CPolynomialHeap<type>& operator=(const CPolynomialHeap<type>& object);
+    const CPolynomialHeap<type>& operator=(CPolynomialHeap<type>&& object);
+
+private:
+    void destroy(void);
+
 private:
     static CDaryPolyHeap<type>* combineTree(CDaryPolyHeap<type>* t1,CDaryPolyHeap<type>* t2);
 
 private:
-    AM_U32 m_deepth;
     std::vector<CDaryPolyHeap<type>*>* m_root=nullptr;
 
 private:
@@ -51,25 +57,51 @@ void (*CPolynomialHeap<type>::m_printRoute)(type* src)=nullptr;
 template<class type>
 CPolynomialHeap<type>::CPolynomialHeap(void)
 {
-    m_deepth=0;
 }
 
 template<class type>
-CPolynomialHeap<type>::CPolynomialHeap(const CPolynomialHeap <type> & object)
-{}
+CPolynomialHeap<type>::CPolynomialHeap(const CPolynomialHeap<type>& object)
+{
+    AM_U32 idx;
+    CDaryPolyHeap<type>* subHeap=nullptr;
+    if(object.IsEmpty())
+    {
+        m_root=nullptr;
+        return;
+    }
+
+    m_root=new std::vector<CDaryPolyHeap<type>*>();
+
+    for(idx=0; idx<object.m_root->size(); idx++)
+    {
+        if(object.m_root->at(idx)!=nullptr)
+        {
+            subHeap=new CDaryPolyHeap<type>();
+            *subHeap=*object.m_root->at(idx);
+            m_root->push_back(subHeap);
+        }
+        else
+        {
+            m_root->push_back(nullptr);
+        }
+    }
+
+    return;
+
+}
 
 template<class type>
-CPolynomialHeap<type>::CPolynomialHeap(const CPolynomialHeap <type>&& object)
-{}
+CPolynomialHeap<type>::CPolynomialHeap(CPolynomialHeap<type>&& object)
+{
+    m_root=object.m_root;
+
+    object.m_root=nullptr;
+}
 
 template<class type>
 CPolynomialHeap<type>::~CPolynomialHeap(void)
 {
-    if(m_root!=nullptr)
-    {
-        m_root->clear();
-        delete m_root;
-    }
+   destroy();
 }
 
 template<class type>
@@ -272,6 +304,17 @@ CPolynomialHeap<type>* CPolynomialHeap<type>::Merge(CPolynomialHeap<type>* heap1
     return resHeap;
 }
 
+template<class type>
+void CPolynomialHeap<type>::destroy(void)
+{
+    if(m_root!=nullptr)
+    {
+        m_root->clear();
+        delete m_root;
+        m_root=nullptr;
+    }
+
+}
 
 template<class type>
 CDaryPolyHeap<type>* CPolynomialHeap<type>::combineTree(CDaryPolyHeap<type>* t1,CDaryPolyHeap<type>* t2)
@@ -316,6 +359,57 @@ void CPolynomialHeap<type>::SetPrintFunc(void (*func)(type* src))
 
     m_printRoute=func;
     CDaryPolyHeap<type>::SetPrintFunc(func);
+}
+
+template<class type>
+const CPolynomialHeap<type>& CPolynomialHeap<type>::operator=(const CPolynomialHeap<type>& object)
+{
+    AM_U32 idx;
+    CDaryPolyHeap<type>* subHeap=nullptr;
+
+    if(this==&object)
+        return *this;
+
+    destroy();
+
+    if(object.IsEmpty())
+    {
+        m_root=nullptr;
+        return *this;
+    }
+
+    m_root=new std::vector<CDaryPolyHeap<type>*>();
+
+    for(idx=0; idx<object.m_root->size(); idx++)
+    {
+        if(object.m_root->at(idx)!=nullptr)
+        {
+            subHeap=new CDaryPolyHeap<type>();
+            *subHeap=*object.m_root->at(idx);
+            m_root->push_back(subHeap);
+        }
+        else
+        {
+            m_root->push_back(nullptr);
+        }
+    }
+
+    return *this;
+}
+
+template<class type>
+const CPolynomialHeap<type>& CPolynomialHeap<type>::operator=(CPolynomialHeap<type>&& object)
+{
+     if(this==&object)
+        return *this;
+
+    destroy();
+
+    m_root=object.m_root;
+
+    object.m_root=nullptr;
+
+    return *this;
 }
 
 
