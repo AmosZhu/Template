@@ -27,13 +27,15 @@ static void copyFunc(AM_U32* dst,AM_U32* src)
 
 void BasicTest(void)
 {
+    CDaryPolyHeap<AM_U32>** forest;
+    AM_U32 len;
     AM_U32 val=37;
     TreeNode_t<AM_U32> node;
     CDaryPolyHeap<AM_U32> heap1,heap3,heap4;
     CDaryPolyHeap<AM_U32>* heap5,*heap6,*heap7;
-    heap1.SetPrintFunc(printNode);
-    heap1.SetCopyFunc(copyFunc);
-    heap1.SetCompareFunc(cmpFunc);
+    CDaryPolyHeap<AM_U32>::SetPrintFunc(printNode);
+    CDaryPolyHeap<AM_U32>::SetCopyFunc(copyFunc);
+    CDaryPolyHeap<AM_U32>::SetCompareFunc(cmpFunc);
 
     heap1.SetRoot(&val);
     //heap1.PreOrderTraversal();
@@ -43,7 +45,7 @@ void BasicTest(void)
     heap2.SetRoot(&val);
     //heap2.PreOrderTraversal();
 
-    heap5=heap1.Merge(&heap2);
+    heap5=CDaryPolyHeap<AM_U32>::Merge(&heap1,&heap2);
     //heap1.PreOrderTraversal();
     heap4=heap3=heap2;
     //heap4.PreOrderTraversal();
@@ -54,17 +56,29 @@ void BasicTest(void)
     val=100;
     heap4.SetRoot(&val);
 
-    heap6=heap3.Merge(&heap4);
+    heap6=CDaryPolyHeap<AM_U32>::Merge(&heap3,&heap4);
 
-    heap6->PreOrderTraversal();
+    //heap6->PreOrderTraversal();
 
     if(heap5!=nullptr)
     {
-        heap5->PreOrderTraversal();
+        //heap5->PreOrderTraversal();
     }
 
-    heap7=heap5->Merge(heap6);
+    heap7=CDaryPolyHeap<AM_U32>::Merge(heap5,heap6);
+    //heap7->PreOrderTraversal();
+
+    forest=CDaryPolyHeap<AM_U32>::DeleteMin(heap7,&len);
+    for(int i=0; i<len; i++)
+    {
+        forest[i]->PreOrderTraversal();
+        printf("\n");
+    }
+
+    /************************************* original heap *******************************/
+    printf("******************************* original heap ***************************\n");
     heap7->PreOrderTraversal();
+
 
     printf("\n");
 }
