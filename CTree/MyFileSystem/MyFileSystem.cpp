@@ -40,7 +40,7 @@
         node->elem.type=DIRECTORY;\
     else\
         node->elem.type=NORMALFILE;\
-
+ 
 
 #define COPY_NAME(dst,src) \
     AM_U32 dstNameLen=strlen(src);\
@@ -188,8 +188,10 @@ Err_t CFileSystem::createFileSystem(const char* path)
 
     abPath=getPath(path);
 
-    m_sysTree=new CTree<file_t>(printNode);
-    m_sysTree->SetCopyFunc(copyFunc);
+    CTree<file_t>::SetPrintFunc(printNode);
+    CTree<file_t>::SetCopyFunc(copyFunc);
+
+    m_sysTree=new CTree<file_t>();
     /*
     *   Firstly, Add root
     */
