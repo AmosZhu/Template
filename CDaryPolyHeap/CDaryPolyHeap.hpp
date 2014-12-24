@@ -140,7 +140,7 @@ Err_t CDaryPolyHeap<type>::GetRootElem(type* elem)
     if(this->IsEmpty())
         return OPERATOR_FAILED;
 
-    m_cpyRoute(elem,&this->m_root->elem);
+    this->m_cpyRoute(elem,&this->m_root->elem);
 
     return RETURN_SUCCESS;
 }
