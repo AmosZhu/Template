@@ -21,6 +21,7 @@ public:
 
 public:
     static CPolynomialHeap<type>* Merge(CPolynomialHeap<type>* heap1,CPolynomialHeap<type>* heap2);
+    static CPolynomialHeap<type>* DeleteMin(CPolynomialHeap<type>* src,type* elem=nullptr);
 
     static void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
     static void SetCopyFunc(void (*func)(type* dst,type* src));
@@ -101,7 +102,7 @@ CPolynomialHeap<type>::CPolynomialHeap(CPolynomialHeap<type>&& object)
 template<class type>
 CPolynomialHeap<type>::~CPolynomialHeap(void)
 {
-   destroy();
+    destroy();
 }
 
 template<class type>
@@ -186,6 +187,99 @@ Err_t CPolynomialHeap<type>::Add(type* elem)
 
     return RETURN_SUCCESS;
 }
+
+template<class type>
+CPolynomialHeap<type>* CPolynomialHeap<type>::DeleteMin(CPolynomialHeap<type>* src,type* elem)
+{
+    AM_U32 len;
+    AM_U32 idx,i;
+    cmp_t cmpRes;
+    type min,current;
+    CDaryPolyHeap<type>* deleteHeap;
+    CDaryPolyHeap<AM_U32>** subForest;
+    CPolynomialHeap<type> sourceHeap;
+    CPolynomialHeap<type>* newHeap;
+    CPolynomialHeap<type>* resHeap;
+
+
+    if(src==nullptr)
+    {
+        return nullptr;
+    }
+
+    if(src->IsEmpty())
+    {
+        return nullptr;
+    }
+
+    sourceHeap=*src;
+    /*
+    *   Init the min first
+    */
+    for(i=0; i<sourceHeap.m_root->size(); i++)
+    {
+        if(sourceHeap.m_root->at(i)!=nullptr)
+        {
+            sourceHeap.m_root->at(i)->GetRootElem(&min);
+            idx=i;
+            break;
+        }
+    }
+
+    for(; i<sourceHeap.m_root->size(); i++)
+    {
+        if(sourceHeap.m_root->at(i)!=nullptr)
+        {
+            sourceHeap.m_root->at(i)->GetRootElem(&current);
+            if(m_cmpRoute(&min,&current)==LARGER)
+            {
+                m_cpyRoute(&min,&current);
+                idx=i;
+            }
+        }
+    }
+
+    if(elem!=nullptr)
+    {
+        m_cpyRoute(elem,&min);
+    }
+
+    /*
+    *   Point to the deleteHeap;
+    */
+
+    deleteHeap=sourceHeap.m_root->at(idx);
+    sourceHeap.m_root->at(idx)==nullptr;
+    if(idx==sourceHeap.m_root->size()-1)
+    {
+        sourceHeap.m_root->pop_back();
+    }
+
+    subForest=CDaryPolyHeap<type>::DeleteMin(deleteHeap,&len);
+    delete deleteHeap;
+    deleteHeap=nullptr;
+
+    if(len>0)
+    {
+        newHeap=new CPolynomialHeap<type>();
+        newHeap->m_root=new std::vector<CDaryPolyHeap<type>*>();
+
+        for(i=0; i<len; i++)
+        {
+            newHeap->m_root->push_back(subForest[i]);
+        }
+
+        resHeap=CPolynomialHeap<type>::Merge(&sourceHeap,newHeap);
+    }
+    else
+    {
+        resHeap=new CPolynomialHeap<type>();
+        *resHeap=std::move(sourceHeap);
+    }
+
+    return resHeap;
+}
+
 
 template<class type>
 CPolynomialHeap<type>* CPolynomialHeap<type>::Merge(CPolynomialHeap<type>* heap1,CPolynomialHeap<type>* heap2)
@@ -400,7 +494,7 @@ const CPolynomialHeap<type>& CPolynomialHeap<type>::operator=(const CPolynomialH
 template<class type>
 const CPolynomialHeap<type>& CPolynomialHeap<type>::operator=(CPolynomialHeap<type>&& object)
 {
-     if(this==&object)
+    if(this==&object)
         return *this;
 
     destroy();

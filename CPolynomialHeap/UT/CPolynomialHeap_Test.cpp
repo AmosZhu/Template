@@ -80,6 +80,11 @@ void BasicTest(void)
     heap4.PrintOut();
 
 
+    printf("=================>Delete min<==================\n");
+    heap3=CPolynomialHeap<AM_U32>::DeleteMin(&heap1);
+    heap3->PrintOut();
 
+    heap3=CPolynomialHeap<AM_U32>::DeleteMin(heap3);
+    heap3->PrintOut();
 
 }
