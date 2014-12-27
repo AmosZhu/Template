@@ -18,6 +18,7 @@ public:
     static void SetCopyFunc(void (*func)(type* dst,type* src));
 
     static Err_t InsertionSort(type* array, AM_U32 len);
+    static Err_t ShellSort(type* array, AM_U32 len);
 
 private:
     static cmp_t (*m_cmpRoute)(type* k1, type* k2);
@@ -80,6 +81,38 @@ Err_t CSortingAlgorithm<type>::InsertionSort(type* array, AM_U32 len)
     }
 
     return RETURN_SUCCESS;
+}
+
+template<class type>
+Err_t CSortingAlgorithm<type>::ShellSort(type* array, AM_U32 len)
+{
+    AM_U32 i,j,increment;
+    type temp;
+    if(array==nullptr||len<=1)
+    {
+        return INVALIDE_PARAMET;
+    }
+
+    for(increment=len/2; increment>0; increment/=2)
+    {
+        for(i=increment; i<len; i++)
+        {
+            m_cpyRoute(&temp,&array[i]);
+            for(j=i; j>=increment; j-=increment)
+            {
+                if(m_cmpRoute(&array[j-increment],&temp)==LARGER)
+                {
+                    array[j]=array[j-increment];
+                }
+                else
+                {
+                    break;
+                }
+            }
+            m_cpyRoute(&array[j],&temp);
+        }
+    }
+
 }
 
 #endif

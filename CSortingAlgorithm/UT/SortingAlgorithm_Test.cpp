@@ -2,7 +2,7 @@
 #include "CSortingAlgorithm.hpp"
 
 
-AM_U32 data[] = {13,55,43,4,123,98,67,444,777,223,100};
+AM_U32 data[] = {13,55,43,4,123,98,67,444,777,223,100,290,1000,999,276};
 
 static cmp_t cmpFunc(AM_U32* arg1,AM_U32* arg2)
 {
@@ -36,4 +36,21 @@ void InsertionSort_UT(void)
     }
 
     printf("\n");
+}
+
+void ShellSort_UT(void)
+{
+    AM_U32 idx;
+    CSortingAlgorithm<AM_U32>::SetCopyFunc(copyFunc);
+    CSortingAlgorithm<AM_U32>::SetCompareFunc(cmpFunc);
+
+    CSortingAlgorithm<AM_U32>::ShellSort(data,sizeof(data)/sizeof(AM_U32));
+
+    for(idx=0; idx<sizeof(data)/sizeof(AM_U32); idx++)
+    {
+        printf("%d ",data[idx]);
+    }
+
+    printf("\n");
+
 }
