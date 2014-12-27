@@ -4,4 +4,6 @@
 void InsertionSort_UT(void);
 void ShellSort_UT(void);
 void HeapSort_UT(void);
+void MergeSort_UT(void);
+
 #endif

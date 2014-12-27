@@ -88,3 +88,21 @@ void HeapSort_UT(void)
     printf("\n");
 }
 
+void MergeSort_UT(void)
+{
+    AM_U32 idx;
+    CSortingAlgorithm<AM_U32>::SetCopyFunc(copyFunc);
+    CSortingAlgorithm<AM_U32>::SetCompareFunc(cmpFunc);
+
+    CSortingAlgorithm<AM_U32>::MergeSort(data,sizeof(data)/sizeof(AM_U32));
+
+    for(idx=0; idx<sizeof(data)/sizeof(AM_U32); idx++)
+    {
+        printf("%d ",data[idx]);
+    }
+
+    printf("\n");
+
+}
+
+

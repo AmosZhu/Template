@@ -22,6 +22,14 @@ public:
     static Err_t InsertionSort(type* array, AM_U32 len);
     static Err_t ShellSort(type* array, AM_U32 len);
     static Err_t HeapSort(type* array, AM_U32 len);
+    static Err_t MergeSort(type* array, AM_U32 len);
+
+private:
+    /*
+    *   For merge sort
+    */
+    static void msort(type* array,AM_U32 lPos,AM_U32 rPos);
+    static void merge(type* array, AM_U32 lPos, AM_U32 cPos, AM_U32 rPos);
 
 private:
     static cmp_t (*m_cmpRoute)(type* k1, type* k2);
@@ -160,5 +168,77 @@ Err_t CSortingAlgorithm<type>::HeapSort(type* array, AM_U32 len)
 
     return RETURN_SUCCESS;
 }
+
+template<class type>
+Err_t CSortingAlgorithm<type>::MergeSort(type* array, AM_U32 len)
+{
+    if(array==nullptr||len<=1)
+    {
+        return INVALIDE_PARAMET;
+    }
+
+    msort(array,0,len-1);
+
+    return RETURN_SUCCESS;
+}
+
+template<class type>
+void CSortingAlgorithm<type>::msort(type* array,AM_U32 lPos,AM_U32 rPos)
+{
+    AM_U32 centerPos;
+    if(lPos<rPos)
+    {
+        centerPos=(lPos+rPos)/2;
+        msort(array,lPos,centerPos);
+        msort(array,centerPos+1,rPos);
+        merge(array,lPos,centerPos,rPos);
+    }
+}
+
+template<class type>
+void CSortingAlgorithm<type>::merge(type* array, AM_U32 lPos, AM_U32 cPos, AM_U32 rPos)
+{
+    AM_U32 len=rPos-lPos+1;
+    type tmpArray[len];
+    AM_U32 i;
+    AM_U32 lP,rP,tP; //left Pointer, right Pointer and temp array pointer;
+    AM_U32 leftEnd,rightEnd;
+
+    leftEnd=cPos;
+    rightEnd=rPos;
+
+    lP=lPos;
+    rP=cPos+1;
+    tP=0;
+
+    while(lP<=leftEnd&&rP<=rightEnd)
+    {
+        if(m_cmpRoute(&array[lP],&array[rP])==SMALLER)
+        {
+            m_cpyRoute(&tmpArray[tP++],&array[lP++]);
+        }
+        else
+        {
+            m_cpyRoute(&tmpArray[tP++],&array[rP++]);
+        }
+    }
+
+    for(; lP<=leftEnd; lP++,tP++)
+    {
+        m_cpyRoute(&tmpArray[tP],&array[lP]);
+    }
+
+    for(; rP<=rightEnd; rP++,tP++)
+    {
+        m_cpyRoute(&tmpArray[tP],&array[rP]);
+    }
+
+    for(i=0; i<len; i++)
+    {
+        m_cpyRoute(&array[lPos+i],&tmpArray[i]);
+    }
+
+}
+
 
 #endif
