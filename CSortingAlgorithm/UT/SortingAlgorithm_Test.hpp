@@ -3,5 +3,5 @@
 
 void InsertionSort_UT(void);
 void ShellSort_UT(void);
-
+void HeapSort_UT(void);
 #endif

@@ -4,7 +4,8 @@ CXXVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
 LIBS =
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../../include/ \
-				../../CSortingAlgorithm/
+				../../CSortingAlgorithm/  \
+				../../CBinaryHeap/
 
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 

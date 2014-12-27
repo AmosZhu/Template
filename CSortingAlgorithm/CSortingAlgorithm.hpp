@@ -2,6 +2,7 @@
 #define _CSORTING_ALGORITHM_HPP
 
 #include "AmosType.hpp"
+#include "CBinaryHeap.hpp"
 #include <string.h>
 
 template<typename type>
@@ -16,13 +17,16 @@ public:
 public:
     static void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
     static void SetCopyFunc(void (*func)(type* dst,type* src));
+    static void SetDummyFunc(void (*dummyFunc)(type* src),BOOL(*isDummyFunc)(type* src));
 
     static Err_t InsertionSort(type* array, AM_U32 len);
     static Err_t ShellSort(type* array, AM_U32 len);
+    static Err_t HeapSort(type* array, AM_U32 len);
 
 private:
     static cmp_t (*m_cmpRoute)(type* k1, type* k2);
     static void (*m_cpyRoute)(type* dst,type* src);
+
 
 };
 
@@ -32,6 +36,7 @@ void (*CSortingAlgorithm<type>::m_cpyRoute)(type* dst,type* src)=nullptr;
 template<class type>
 cmp_t (*CSortingAlgorithm<type>::m_cmpRoute)(type* k1,type* k2)=nullptr;
 
+
 template<class type>
 void CSortingAlgorithm<type>::SetCompareFunc(cmp_t (*func)(type* k1,type* k2))
 {
@@ -40,6 +45,8 @@ void CSortingAlgorithm<type>::SetCompareFunc(cmp_t (*func)(type* k1,type* k2))
         return;
 
     m_cmpRoute=func;
+
+    CBinaryHeap<type>::SetCompareFunc(func);
 }
 
 template<class type>
@@ -49,6 +56,14 @@ void CSortingAlgorithm<type>::SetCopyFunc(void (*func)(type* dst,type* src))
         return;
 
     m_cpyRoute=func;
+
+    CBinaryHeap<type>::SetCopyFunc(func);
+}
+
+template<class type>
+void CSortingAlgorithm<type>::SetDummyFunc( void (*dummyFunc)(type* src),BOOL(*isDummyFunc)(type* src))
+{
+    CBinaryHeap<type>::SetDummyFunc(dummyFunc,isDummyFunc);
 }
 
 template<class type>
@@ -113,6 +128,37 @@ Err_t CSortingAlgorithm<type>::ShellSort(type* array, AM_U32 len)
         }
     }
 
+    return RETURN_SUCCESS;
+
+}
+
+template<class type>
+Err_t CSortingAlgorithm<type>::HeapSort(type* array, AM_U32 len)
+{
+    AM_U32 i,length;
+    CBinaryHeap<type> binHeap;
+    if(array==nullptr||len<=1)
+    {
+        return INVALIDE_PARAMET;
+    }
+
+    binHeap.Create(len);
+    binHeap.Initialize();
+
+    length=len;
+    for(i=0; i<length; i++)
+    {
+        binHeap.Insert(&array[i]);
+    }
+
+    length=binHeap.ElemCount();
+    for(i=0; i<length; i++ )
+    {
+        binHeap.DeleteMin(&array[i]);
+    }
+
+
+    return RETURN_SUCCESS;
 }
 
 #endif
