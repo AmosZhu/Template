@@ -1,4 +1,6 @@
 CC = g++
+CXXVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
+
 LIBS =
 SRCS += $(wildcard *.cpp)
 ROOTPATH = ../../..
@@ -9,6 +11,13 @@ INCLUDE_PATH += $(ROOTPATH)/Template/include/ \
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 
 CFLAGS += $(foreach dir, $(INCLUDE_PATH), -I$(dir))
+
+ifeq "$(CXXVERSION)" "4.6.3"
+	CFLAGS += -std=c++0x
+else
+	CFLAGS += -std=c++11
+endif
+
 TARGET = BinaryHeap
 
 .PHONY:all

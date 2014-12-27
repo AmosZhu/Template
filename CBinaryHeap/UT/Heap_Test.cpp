@@ -44,11 +44,11 @@ void BinaryHeap_UT()
 {
     AM_U32 idx;
     AM_S32 minData;
-    CBinaryHeap<AM_S32> heap(32);
-    heap.SetCompareFunc(cmpFunc);
-    heap.SetCopyFunc(copyFunc);
-    heap.SetPrintFunc(printNode);
-    heap.SetDummyFunc(dummyFunc,isDummyFunc);
+    CBinaryHeap<AM_S32> heap(sizeof(data)/sizeof(AM_S32));
+    CBinaryHeap<AM_S32>::SetCompareFunc(cmpFunc);
+    CBinaryHeap<AM_S32>::SetCopyFunc(copyFunc);
+    CBinaryHeap<AM_S32>::SetPrintFunc(printNode);
+    CBinaryHeap<AM_S32>::SetDummyFunc(dummyFunc,isDummyFunc);
 
     heap.Initialize();
     for(idx=0; idx<(sizeof(data)/sizeof(AM_S32)); idx++)
@@ -56,13 +56,17 @@ void BinaryHeap_UT()
         heap.Insert(&data[idx]);
     }
 
+    printf("===================> heap <========================\n");
     heap.PrintOut();
 
     CBinaryHeap<AM_S32> heap1(heap);
     CBinaryHeap<AM_S32> heap2;
+    printf("===================> heap1 <========================\n");
     std::cout<<heap1;
 
     heap2=heap;
+    printf("===================> heap2 <========================\n");
+    heap2.PrintOut();
 
     for(idx=0; idx<5; idx++)
     {

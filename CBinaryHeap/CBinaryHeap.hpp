@@ -30,10 +30,10 @@ public:
     void Destroy();
     void PrintOut(void);
 
-    void SetDummyFunc(void (*dummyFunc)(type* src),BOOL(*isDummyFunc)(type* src));
-    void SetCopyFunc(void (*func)(type* dst,type* src));
-    void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
-    void SetPrintFunc(void (*func)(type* src));
+    static void SetDummyFunc(void (*dummyFunc)(type* src),BOOL(*isDummyFunc)(type* src));
+    static void SetCopyFunc(void (*func)(type* dst,type* src));
+    static void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
+    static void SetPrintFunc(void (*func)(type* src));
 
 public:
     CBinaryHeap<type>& operator=(const CBinaryHeap<type>& object);
@@ -44,41 +44,47 @@ public:
 private:
     AM_U32 m_capacity;
     AM_U32 m_size;
-    type* m_elemArray;
-    void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
-    BOOL (*m_isDummy)(type* src);
-    void (*m_dummyRoute)(type* src);
-    cmp_t (*m_cmpRoute)(type* k1,type* k2);
-    void (*m_printRoute)(type* src);
+    type* m_elemArray=nullptr;
+
+private:
+    static void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
+    static BOOL (*m_isDummy)(type* src);
+    static void (*m_dummyRoute)(type* src);
+    static cmp_t (*m_cmpRoute)(type* k1,type* k2);
+    static void (*m_printRoute)(type* src);
 
 };
+
+template<class type>
+void (*CBinaryHeap<type>::m_cpyRoute)(type* dst,type* src)=nullptr;
+
+template<class type>
+BOOL (*CBinaryHeap<type>::m_isDummy)(type* src)=nullptr;
+
+template<class type>
+void (*CBinaryHeap<type>::m_dummyRoute)(type* src)=nullptr;
+
+template<class type>
+cmp_t (*CBinaryHeap<type>::m_cmpRoute)(type* k1,type* k2)=nullptr;
+
+template<class type>
+void (*CBinaryHeap<type>::m_printRoute)(type* src)=nullptr;
+
 
 template<class type>
 CBinaryHeap<type>::CBinaryHeap()
 {
     m_capacity=0;
     m_size=0;
-    m_elemArray=NULL;
-    m_cpyRoute=NULL;
-    m_isDummy=NULL;
-    m_dummyRoute=NULL;
-    m_cmpRoute=NULL;
-    m_printRoute=NULL;
+    m_elemArray=nullptr;
 }
 
 template<class type>
 CBinaryHeap<type>::CBinaryHeap(AM_U32 maxSize)
 {
-    m_capacity=maxSize;
+    m_capacity=maxSize+1;
     m_size=0;
-    m_elemArray=new type[maxSize];
-    m_cpyRoute=NULL;
-    m_isDummy=NULL;
-    m_dummyRoute=NULL;
-    m_cmpRoute=NULL;
-    m_printRoute=NULL;
-
-
+    m_elemArray=new type[m_capacity];
 }
 
 template<class type>
@@ -90,12 +96,7 @@ CBinaryHeap<type>::CBinaryHeap(const CBinaryHeap<type>& object)
 
     m_capacity=object.m_capacity;
     m_size=object.m_size;
-    m_cpyRoute=object.m_cpyRoute;
-    m_isDummy=object.m_isDummy;
-    m_dummyRoute=object.m_dummyRoute;
-    m_cmpRoute=object.m_cmpRoute;
-    m_printRoute=object.m_printRoute;
-    m_elemArray=NULL;
+    m_elemArray=nullptr;
 
     if(!object.IsEmpty())
     {
@@ -119,7 +120,7 @@ template<class type>
 Err_t CBinaryHeap<type>::Initialize(void)
 {
     AM_U32 idx;
-    if(m_capacity==0||m_elemArray==NULL||m_dummyRoute==NULL||m_isDummy==NULL)
+    if(m_capacity==0||m_elemArray==nullptr||m_dummyRoute==nullptr||m_isDummy==nullptr)
         return OPERATOR_FAILED;
 
     for(idx=0; idx<m_capacity; idx++)
@@ -139,15 +140,9 @@ Err_t CBinaryHeap<type>::Create(AM_U32 maxSize)
     if(!IsEmpty())
         Destroy();
 
-    m_capacity=maxSize;
+    m_capacity=maxSize+1;
     m_size=0;
-    m_elemArray=new type[maxSize];
-    m_cpyRoute=NULL;
-    m_isDummy=NULL;
-    m_dummyRoute=NULL;
-    m_cmpRoute=NULL;
-    m_printRoute=NULL;
-
+    m_elemArray=new type[m_capacity];
 
     return RETURN_SUCCESS;
 }
@@ -155,8 +150,8 @@ Err_t CBinaryHeap<type>::Create(AM_U32 maxSize)
 template<class type>
 AM_U32 CBinaryHeap<type>::ElemCount(void)
 {
-	return m_size;
-	}
+    return m_size;
+}
 
 template<class type>
 BOOL CBinaryHeap<type>::IsEmpty(void) const
@@ -171,7 +166,7 @@ template<class type>
 Err_t CBinaryHeap<type>::Insert(type* elem)
 {
     AM_U32 idx;
-    if(elem==NULL)
+    if(elem==nullptr)
         return INVALIDE_PARAMET;
 
     for(idx=++m_size; SMALLER==m_cmpRoute(elem,&m_elemArray[idx/2]); idx/=2)
@@ -189,7 +184,7 @@ Err_t CBinaryHeap<type>::DeleteMin(type* elem)
 {
     AM_U32 idx,childIdx;
     type lastElem;
-    if(elem==NULL)
+    if(elem==nullptr)
         return INVALIDE_PARAMET;
 
     if(IsEmpty())
@@ -200,7 +195,7 @@ Err_t CBinaryHeap<type>::DeleteMin(type* elem)
     m_cpyRoute(&lastElem,&m_elemArray[m_size]);
     m_dummyRoute(&m_elemArray[m_size--]); //Set the last elem dummy
 
-    for(idx=1; !m_isDummy(&m_elemArray[idx]); idx=childIdx)
+    for(idx=1; idx*2<=m_size; idx=childIdx)
     {
         childIdx=idx*2;
 
@@ -230,18 +225,12 @@ Err_t CBinaryHeap<type>::DeleteMin(type* elem)
 template<class type>
 void CBinaryHeap<type>::Destroy(void)
 {
-    if(m_elemArray!=NULL)
+    if(m_elemArray!=nullptr)
     {
         delete[] m_elemArray;
-        m_elemArray=NULL;
+        m_elemArray=nullptr;
         m_capacity=0;
         m_size=0;
-        m_cpyRoute=NULL;
-        m_isDummy=NULL;
-        m_dummyRoute=NULL;
-        m_cmpRoute=NULL;
-        m_printRoute=NULL;
-
     }
 }
 
@@ -300,12 +289,7 @@ CBinaryHeap<type>& CBinaryHeap<type>::operator=(const CBinaryHeap<type>& object)
 
     m_capacity=object.m_capacity;
     m_size=object.m_size;
-    m_cpyRoute=object.m_cpyRoute;
-    m_isDummy=object.m_isDummy;
-    m_dummyRoute=object.m_dummyRoute;
-    m_cmpRoute=object.m_cmpRoute;
-    m_printRoute=object.m_printRoute;
-    m_elemArray=NULL;
+    m_elemArray=nullptr;
 
     if(!object.IsEmpty())
     {
