@@ -3,6 +3,7 @@
 
 
 AM_U32 data[] = {13,55,43,4,123,98,67,444,777,223,100,290,1000,999,276};
+AM_U32 data_insertion[]={1000,999,777};
 
 static cmp_t cmpFunc(AM_U32* arg1,AM_U32* arg2)
 {
@@ -44,11 +45,11 @@ void InsertionSort_UT(void)
     CSortingAlgorithm<AM_U32>::SetCopyFunc(copyFunc);
     CSortingAlgorithm<AM_U32>::SetCompareFunc(cmpFunc);
 
-    CSortingAlgorithm<AM_U32>::InsertionSort(data,sizeof(data)/sizeof(AM_U32));
+    CSortingAlgorithm<AM_U32>::InsertionSort(data_insertion,sizeof(data_insertion)/sizeof(AM_U32));
 
-    for(idx=0; idx<sizeof(data)/sizeof(AM_U32); idx++)
+    for(idx=0; idx<sizeof(data_insertion)/sizeof(AM_U32); idx++)
     {
-        printf("%d ",data[idx]);
+        printf("%d ",data_insertion[idx]);
     }
 
     printf("\n");
@@ -60,11 +61,11 @@ void ShellSort_UT(void)
     CSortingAlgorithm<AM_U32>::SetCopyFunc(copyFunc);
     CSortingAlgorithm<AM_U32>::SetCompareFunc(cmpFunc);
 
-    CSortingAlgorithm<AM_U32>::ShellSort(data,sizeof(data)/sizeof(AM_U32));
+    CSortingAlgorithm<AM_U32>::ShellSort(data_insertion,sizeof(data_insertion)/sizeof(AM_U32));
 
-    for(idx=0; idx<sizeof(data)/sizeof(AM_U32); idx++)
+    for(idx=0; idx<sizeof(data_insertion)/sizeof(AM_U32); idx++)
     {
-        printf("%d ",data[idx]);
+        printf("%d ",data_insertion[idx]);
     }
 
     printf("\n");
@@ -104,5 +105,23 @@ void MergeSort_UT(void)
     printf("\n");
 
 }
+
+void QuickSort_UT(void)
+{
+    AM_U32 idx;
+    CSortingAlgorithm<AM_U32>::SetCopyFunc(copyFunc);
+    CSortingAlgorithm<AM_U32>::SetCompareFunc(cmpFunc);
+
+    CSortingAlgorithm<AM_U32>::QuickSort(data,sizeof(data)/sizeof(AM_U32));
+
+    for(idx=0; idx<sizeof(data)/sizeof(AM_U32); idx++)
+    {
+        printf("%d ",data[idx]);
+    }
+
+    printf("\n");
+
+}
+
 
 

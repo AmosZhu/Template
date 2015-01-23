@@ -5,6 +5,8 @@
 #include "CBinaryHeap.hpp"
 #include <string.h>
 
+#define QSORT_CUTOFF (3)
+
 template<typename type>
 class CSortingAlgorithm
 {
@@ -23,6 +25,7 @@ public:
     static Err_t ShellSort(type* array, AM_U32 len);
     static Err_t HeapSort(type* array, AM_U32 len);
     static Err_t MergeSort(type* array, AM_U32 len);
+    static Err_t QuickSort(type* array, AM_U32 len);
 
 private:
     /*
@@ -30,6 +33,7 @@ private:
     */
     static void msort(type* array,AM_U32 lPos,AM_U32 rPos);
     static void merge(type* array, AM_U32 lPos, AM_U32 cPos, AM_U32 rPos);
+    static void qsort(type* array,AM_U32 lPos,AM_U32 rPos);
 
 private:
     static cmp_t (*m_cmpRoute)(type* k1, type* k2);
@@ -183,6 +187,20 @@ Err_t CSortingAlgorithm<type>::MergeSort(type* array, AM_U32 len)
 }
 
 template<class type>
+Err_t CSortingAlgorithm<type>::QuickSort(type* array, AM_U32 len)
+{
+    if(array==nullptr||len<=1)
+    {
+        return INVALIDE_PARAMET;
+    }
+
+    qsort(array,0,len-1);
+
+    return RETURN_SUCCESS;
+}
+
+
+template<class type>
 void CSortingAlgorithm<type>::msort(type* array,AM_U32 lPos,AM_U32 rPos)
 {
     AM_U32 centerPos;
@@ -238,6 +256,58 @@ void CSortingAlgorithm<type>::merge(type* array, AM_U32 lPos, AM_U32 cPos, AM_U3
         m_cpyRoute(&array[lPos+i],&tmpArray[i]);
     }
 
+}
+
+template<class type>
+void CSortingAlgorithm<type>::qsort(type* array,AM_U32 lPos,AM_U32 rPos)
+{
+    AM_U32 i,j;
+    AM_U32 center;
+    type pivot;
+
+    if(lPos+QSORT_CUTOFF<rPos)
+    {
+
+        /*
+        *   find the pivot,and swap
+        */
+
+        center=(lPos+rPos)/2;
+        pivot=array[center];
+        std::swap(array[center],array[rPos]);
+
+        /*
+        *   Sorting the left array and right array
+        */
+        i=lPos;
+        j=rPos-1;
+        for(;;)
+        {
+            while(m_cmpRoute(&array[i],&pivot)==SMALLER)
+            {
+                i++;
+            }
+            while(m_cmpRoute(&array[j],&pivot)==LARGER)
+            {
+                j--;
+            }
+            if(i<j)
+            {
+                std::swap(array[i],array[j]);
+            }
+            else
+            {
+                break;
+            }
+        }
+        std::swap(array[i],array[rPos]); //restore the pivot
+        qsort(array,lPos,i);
+        qsort(array,i+1,rPos);
+    }
+    else
+    {
+        InsertionSort(&array[lPos],rPos-lPos+1);
+    }
 }
 
 

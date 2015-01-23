@@ -3,8 +3,9 @@
 int main(int argc,char* argv[])
 {
 
-    //InsertionSort_UT();
-   // ShellSort_UT();
+    InsertionSort_UT();
+    // ShellSort_UT();
     //HeapSort_UT();
-    MergeSort_UT();
+    //MergeSort_UT();
+    QuickSort_UT();
 }
