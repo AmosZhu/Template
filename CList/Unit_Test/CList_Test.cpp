@@ -33,9 +33,9 @@ static void copyFunc(AM_U32* dst,AM_U32* src)
 void ReverseTest(void)
 {
     CList<AM_U32> list1,list2;
-    list1.SetCopyFunc(copyFunc);
-    list1.SetCompareFunc(cmpFunc);
-    list1.SetPrintFunc(printNode);
+    CList<AM_U32>::SetCopyFunc(copyFunc);
+    CList<AM_U32>::SetCompareFunc(cmpFunc);
+    CList<AM_U32>::SetPrintFunc(printNode);
 
     int i=0;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
@@ -57,9 +57,9 @@ void ReverseTest(void)
 void SearchTest(void)
 {
     CList<AM_U32> list1;
-    list1.SetCopyFunc(copyFunc);
-    list1.SetCompareFunc(cmpFunc);
-    list1.SetPrintFunc(printNode);
+    CList<AM_U32>::SetCopyFunc(copyFunc);
+    CList<AM_U32>::SetCompareFunc(cmpFunc);
+    CList<AM_U32>::SetPrintFunc(printNode);
     int i=0;
     AM_U32* pos=NULL;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
@@ -87,9 +87,9 @@ void SearchTest(void)
 void DeleteTest(void)
 {
     CList<AM_U32> list1,list2,list3;
-    list1.SetCopyFunc(copyFunc);
-    list1.SetCompareFunc(cmpFunc);
-    list1.SetPrintFunc(printNode);
+    CList<AM_U32>::SetCopyFunc(copyFunc);
+    CList<AM_U32>::SetCompareFunc(cmpFunc);
+    CList<AM_U32>::SetPrintFunc(printNode);
     int i=0;
     for(i=0; i<sizeof(data)/sizeof(AM_U32); i++)
     {

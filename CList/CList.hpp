@@ -37,9 +37,9 @@ public:
     Err_t Reverse(void);
     void PrintOut(void);
 
-    void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
-    void SetCopyFunc(void (*func)(type* dst,type* src));
-    void SetPrintFunc(void (*func)(type* src));
+    static void SetCompareFunc(cmp_t (*func)(type* k1,type* k2));
+    static void SetCopyFunc(void (*func)(type* dst,type* src));
+    static void SetPrintFunc(void (*func)(type* src));
 
 public:
     CList<type>& operator=(const CList<type>& object);
@@ -48,15 +48,24 @@ public:
     template<typename T> friend std::ostream& operator<<(std::ostream& output,const CList<T>& object);
 
 private:
-    cmp_t (*m_cmpRoute)(type* k1,type* k2);
-    void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
-    void (*m_printRoute)(type* src);
+    static cmp_t (*m_cmpRoute)(type* k1,type* k2);
+    static void (*m_cpyRoute)(type* dst,type* src); //Copy function for the node,set by different type;
+    static void (*m_printRoute)(type* src);
 private:
     node_t<type>* m_head;
     node_t<type>* m_pSearch;  //Use for search
     AM_U32 count; //Number of elements;
 
 };
+
+template<class type>
+cmp_t (*CList<type>::m_cmpRoute)(type* k1,type* k2)=nullptr;
+
+template<class type>
+void (*CList<type>::m_cpyRoute)(type* dst,type* src)=nullptr;
+
+template<class type>
+void (*CList<type>::m_printRoute)(type* src)=nullptr;
 
 
 template<class type>
