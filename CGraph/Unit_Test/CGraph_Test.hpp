@@ -3,8 +3,8 @@
 
 void CGraph_CreateTest(void);
 void CGraph_TopoSortTest(void);
-void CGraph_UnweightedTest(void);
-void CGraph_WeightedTest(void);
+void CGraph_UnweightedTest(char* path);
+void CGraph_WeightedTest(char* path);
 
 
 #endif

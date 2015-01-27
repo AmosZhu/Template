@@ -5,10 +5,17 @@
 #include <iostream>
 
 
+static void copyFunc(gvertex_t* dst,gvertex_t* src)
+{
+    memcpy(dst,src,sizeof(gvertex_t));
+}
+
+
 CGraph::CGraph(void)
 {
     m_node=NULL;
     m_vexno=0;
+
 }
 
 CGraph::CGraph(const CGraph& object)
@@ -91,12 +98,15 @@ Err_t CGraph::Create(char* path)
     if(fscanf(fp,"%d",&m_vexno)<0)
         return FILEDATA_CORRUPT;
 
+
     if(m_vexno!=0)
     {
         m_node=new gnode_t[m_vexno];
     }
 
     memset(m_node,0,m_vexno*sizeof(gnode_t));
+
+    CList<gvertex_t>::SetCopyFunc(copyFunc);
 
     for(; index<m_vexno; index++)
     {
@@ -121,7 +131,7 @@ Err_t CGraph::Create(char* path)
                     }
                 }
             }
-            m_node[index].adjacent_node.Insert(temp);
+            m_node[index].adjacent_node.Insert(&temp);
         }
     }
 

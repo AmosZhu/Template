@@ -26,12 +26,12 @@ void CGraph_TopoSortTest(void)
     graph1.PrintTopoSortResult(q1,9);
 }
 
-void CGraph_UnweightedTest(void)
+void CGraph_UnweightedTest(char* path)
 {
     CGraph graph1;
     int number;
 
-    if(graph1.Create((char*)UNWEIGHED_PATH)!=RETURN_SUCCESS)
+    if(graph1.Create(path)!=RETURN_SUCCESS)
         printf("Test Failed!\n");
 
     graph1.PrintOut();
@@ -41,18 +41,18 @@ void CGraph_UnweightedTest(void)
     graph1.PrintShortestPath(table,number);
 }
 
-void CGraph_WeightedTest(void)
+void CGraph_WeightedTest(char* path)
 {
     CGraph graph1;
     int number;
 
-    if(graph1.Create((char*)WEIGHTED_PATH)!=RETURN_SUCCESS)
+    if(graph1.Create(path)!=RETURN_SUCCESS)
         printf("Test Failed!\n");
 
     graph1.PrintOut();
     number=graph1.CountNo();
     gtable_t table[number];
-    graph1.WeightShortestPath(2,table);
+    graph1.WeightShortestPath(0,table);
     graph1.PrintShortestPath(table,number);
 
 }

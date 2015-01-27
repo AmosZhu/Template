@@ -1,15 +1,24 @@
 CC = g++
-LIBS = 
+
+CXXVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
+
+LIBS =
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../../CList/ \
 				../../CQueue/ \
 				../../include/ \
-				../../CGraph/ 
+				../../CGraph/
 
 #PATCH
 TEMP += $(wildcard ../*.cpp)
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 OBJS += $(TEMP:%.cpp=%.o)
+
+ifeq "$(CXXVERSION)" "4.6.3"
+	CFLAGS += -std=c++0x
+else
+	CFLAGS += -std=c++11
+endif
 
 CFLAGS += $(foreach dir, $(INCLUDE_PATH), -I$(dir))
 TARGET = GraphTest
