@@ -26,7 +26,7 @@ typedef struct GRAPH_VERTEX_TYPE
 {
     AM_U32 index;
     AM_S32 weight;
-}gvertex_t;
+} gvertex_t;
 
 typedef struct GRAPH_NODE_TYPE
 {
@@ -82,6 +82,7 @@ public:
     ******************************************************/
     Err_t UnWeightShortestPath(AM_U32 start,gtable_t* table);
     Err_t WeightShortestPath(AM_U32 start,gtable_t* table);
+    Err_t NegativeWeightShortestPath(AM_U32 start,gtable_t* table);
     void PrintShortestPath(gtable_t* table,AM_U32 size);
 public:
     CGraph& operator=(const CGraph& object);

@@ -322,6 +322,48 @@ Err_t CGraph::WeightShortestPath(AM_U32 start,gtable_t* table)
 }
 
 
+Err_t CGraph::NegativeWeightShortestPath(AM_U32 start,gtable_t* table)
+{
+    AM_S32 currDist=INFINITY;
+    AM_U32 v;  //use index only
+    gvertex_t w;
+    CQueue<AM_U32> q1;
+    if((table==NULL)||(IsEmpty()))
+        return OPERATOR_FAILED;
+
+    table_init(table);
+
+    table[start].distance=0;
+
+    q1.Enqueue(start);
+    table[start].know=TRUE; //It means this node is in the queue;
+    while(!q1.IsEmpty())
+    {
+        q1.Dequeue(&v);
+        table[v].know=FALSE; //If out the queue, reset the know flag;
+        currDist=table[v].distance;
+        m_node[v].adjacent_node.ResetElemNext();
+
+        while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        {
+            if(table[w.index].distance>currDist+w.weight)
+            {
+                table[w.index].distance=currDist+w.weight;
+                table[w.index].preVertex=v;
+                if(!table[w.index].know)
+                {
+                    q1.Enqueue(w.index);
+                    table[w.index].know=TRUE;
+                }
+            }
+        }
+
+    }
+    return RETURN_SUCCESS;
+
+}
+
+
 /************************************************
 *   This function used for shortest path yet
 ************************************************/
