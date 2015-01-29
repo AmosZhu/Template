@@ -10,8 +10,9 @@ int main(int argc,char* argv[])
         return -1;
     }
 
-    CGraph_WeightedTest(argv[1]);
+    //CGraph_WeightedTest(argv[1]);
     //CGraph_UnweightedTest(argv[1]);
-    CGraph_NeWeightedTest(argv[1]);
+    //CGraph_NeWeightedTest(argv[1]);
+    CGraph_MinSpanTree(argv[1]);
     return 0;
 }

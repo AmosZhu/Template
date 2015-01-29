@@ -12,6 +12,7 @@
 #include "AmosType.hpp"
 #include "CList.hpp"
 #include "CQueue.hpp"
+#include "CBinaryHeap.hpp"
 
 #define NAMESIZE 100
 #define DISTANCESELF -1000
@@ -43,6 +44,12 @@ typedef struct GRAPH_TABLE_TYPE
     AM_S32 preVertex;   //Use to trace the route;
 } gtable_t;
 
+typedef struct HEAP_NODE_TYPE
+{
+    AM_U32 u;
+    AM_U32 v;
+    AM_S32 weight;
+} hNode_t;
 
 class CGraph
 {
@@ -83,15 +90,16 @@ public:
     Err_t UnWeightShortestPath(AM_U32 start,gtable_t* table);
     Err_t WeightShortestPath(AM_U32 start,gtable_t* table);
     Err_t NegativeWeightShortestPath(AM_U32 start,gtable_t* table);
+    Err_t MinSpanTree(gtable_t* table);
     void PrintShortestPath(gtable_t* table,AM_U32 size);
 public:
     CGraph& operator=(const CGraph& object);
 
 
 private:
-    gnode_t* m_node;
+    gnode_t* m_node=nullptr;
     AM_U32 m_vexno;
-
+    CBinaryHeap<hNode_t> m_binHeap;
 
 private:
     void table_init(gtable_t* table);

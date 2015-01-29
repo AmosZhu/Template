@@ -6,6 +6,7 @@ LIBS =
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../../CList/ \
 				../../CQueue/ \
+				../../CBinaryHeap/ \
 				../../include/ \
 				../../CGraph/
 

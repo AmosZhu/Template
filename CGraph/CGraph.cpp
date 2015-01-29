@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include "CDisjointSet.hpp"
 
 
 static void copyFunc(gvertex_t* dst,gvertex_t* src)
@@ -10,6 +11,59 @@ static void copyFunc(gvertex_t* dst,gvertex_t* src)
     memcpy(dst,src,sizeof(gvertex_t));
 }
 
+
+static void BinCopyFunc(hNode_t* dst,hNode_t* src)
+{
+    memcpy(dst,src,sizeof(hNode_t));
+}
+
+static cmp_t BinCmpFunc(hNode_t* arg1,hNode_t* arg2)
+{
+    if((arg1==NULL)||(arg2==NULL))
+        return INVALID;
+
+    if(arg1->weight==arg2->weight)
+        return EQUAL;
+    else if(arg1->weight>arg2->weight)
+        return LARGER;
+    else if(arg1->weight<arg2->weight)
+        return SMALLER;
+}
+
+static BOOL BinIsDummyFunc(hNode_t *src)
+{
+    if(src->u==-1&&src->v==-1)
+        return TRUE;
+
+    return FALSE;
+}
+
+static void BinDummyFunc(hNode_t* src)
+{
+    src->u=-1;
+    src->v=-1;
+}
+
+static cmp_t SCmpFunc(AM_U32* arg1,AM_U32* arg2)
+{
+    if((arg1==NULL)||(arg2==NULL))
+        return INVALID;
+
+    if(*arg1==-1||*arg2==-1)
+        return INVALID;
+
+    if(*arg1==*arg2)
+        return EQUAL;
+    else if(*arg1>*arg2)
+        return LARGER;
+    else if(*arg1<*arg2)
+        return SMALLER;
+}
+
+static void SCopyFunc(AM_U32* dst,AM_U32* src)
+{
+    memcpy(dst,src,sizeof(AM_U32));
+}
 
 CGraph::CGraph(void)
 {
@@ -61,6 +115,16 @@ void CGraph::Destroy(void)
     }
 
     delete[] m_node;
+    m_node=nullptr;
+
+#if 0
+    if(m_binHeap!=nullptr)
+    {
+        delete m_binHeap;
+        m_binHeap=nullptr;
+    }
+#endif /* Modify by Amos.zhu */
+
     m_vexno=0;
 }
 
@@ -75,6 +139,10 @@ Err_t CGraph::Create(char* path)
     char* ret;
     AM_U32 type;
     gvertex_t temp;
+    hNode_t hNode;
+    AM_U32 noOfeges=0;
+    gvertex_t v;
+
     if((fp=fopen(path,"rb"))==NULL)
         return RESOURCE_UNAVAILABLE;
 
@@ -104,8 +172,13 @@ Err_t CGraph::Create(char* path)
         m_node=new gnode_t[m_vexno];
     }
 
-    memset(m_node,0,m_vexno*sizeof(gnode_t));
+    //memset(m_node,0,m_vexno*sizeof(gnode_t));
 
+    CBinaryHeap<hNode_t>::SetCompareFunc(BinCmpFunc);
+    CBinaryHeap<hNode_t>::SetCopyFunc(BinCopyFunc);
+    CBinaryHeap<hNode_t>::SetDummyFunc(BinDummyFunc,BinIsDummyFunc);
+    CDisjointSet<AM_U32>::SetCompareFunc(SCmpFunc);
+    CDisjointSet<AM_U32>::SetCopyFunc(SCopyFunc);
     CList<gvertex_t>::SetCopyFunc(copyFunc);
 
     for(; index<m_vexno; index++)
@@ -132,6 +205,20 @@ Err_t CGraph::Create(char* path)
                 }
             }
             m_node[index].adjacent_node.Insert(&temp);
+            noOfeges++;
+        }
+    }
+
+    m_binHeap.Create(noOfeges);
+    for(index=0; index<m_vexno; index++)
+    {
+        m_node[index].adjacent_node.ResetElemNext();
+        while(m_node[index].adjacent_node.GetElemNext(&v)==RETURN_SUCCESS)
+        {
+            hNode.u=index;
+            hNode.v=v.index;
+            hNode.weight=v.weight;
+            m_binHeap.Insert(&hNode);
         }
     }
 
@@ -363,6 +450,45 @@ Err_t CGraph::NegativeWeightShortestPath(AM_U32 start,gtable_t* table)
 
 }
 
+Err_t CGraph::MinSpanTree(gtable_t* table)
+{
+    AM_U32 s1,s2;
+    AM_U32 idx;
+    hNode_t hNode;
+    CDisjointSet<AM_U32> nodeSet;
+    CQueue<AM_U32> q1;
+    if((table==NULL)||(IsEmpty()))
+        return OPERATOR_FAILED;
+
+    table_init(table);
+
+
+    for(idx=0; idx<m_vexno; idx++)
+    {
+        nodeSet.Add(&(m_node[idx].index));
+    }
+
+    idx=0;
+
+    while(idx<m_vexno-1)
+    {
+        m_binHeap.DeleteMin(&hNode);
+        s1=nodeSet.Find(&hNode.u);
+        s2=nodeSet.Find(&hNode.v);
+        if(s1!=s2&&!table[hNode.u].know)
+        {
+            nodeSet.Union(&s1,&s2);
+            table[hNode.u].distance=hNode.weight;
+            table[hNode.u].preVertex=hNode.v;
+            table[hNode.u].know=TRUE;
+            idx++;
+
+        }
+    }
+
+    return RETURN_SUCCESS;
+}
+
 
 /************************************************
 *   This function used for shortest path yet
@@ -521,6 +647,7 @@ CGraph& CGraph::operator=(const CGraph& object)
         m_node=NULL;
         m_vexno=0;
     }
+
     return *this;
 }
 

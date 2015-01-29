@@ -6,5 +6,6 @@ void CGraph_TopoSortTest(void);
 void CGraph_UnweightedTest(char* path);
 void CGraph_WeightedTest(char* path);
 void CGraph_NeWeightedTest(char* path);
+void CGraph_MinSpanTree(char* path);
 
 #endif

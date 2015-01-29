@@ -5,6 +5,8 @@ CXXVERSION = $(shell g++ --version | grep ^g++ | sed 's/^.* //g')
 SRCS += $(wildcard *.cpp)
 INCLUDE_PATH += ../CList/ \
 				../CQueue/ \
+				../CBinaryHeap/ \
+				../CDisjointSet/ \
 				../include/
 
 OBJS := $(SRCS:.cpp=.o)

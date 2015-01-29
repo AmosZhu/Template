@@ -73,3 +73,17 @@ void CGraph_NeWeightedTest(char* path)
 
 }
 
+void CGraph_MinSpanTree(char* path)
+{
+    CGraph graph1;
+    int number;
+
+    if(graph1.Create(path)!=RETURN_SUCCESS)
+        printf("Test Failed!\n");
+
+    graph1.PrintOut();
+    number=graph1.CountNo();
+    gtable_t table[number];
+    graph1.MinSpanTree(table);
+    graph1.PrintShortestPath(table,number);
+}
