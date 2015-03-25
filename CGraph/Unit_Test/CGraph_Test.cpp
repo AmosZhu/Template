@@ -57,6 +57,46 @@ void CGraph_WeightedTest(char* path)
 
 }
 
+void CGraph_WeightedTestDP(char* path)
+{
+    CGraph graph1;
+    int number;
+
+    if(graph1.Create(path)!=RETURN_SUCCESS)
+        printf("Test Failed!\n");
+
+    //graph1.PrintOut();
+    //number=graph1.CountNo();
+    graph1.WeightShortestPathDP(0);
+}
+
+void CGraph_WeightedTestBF(char* path)
+{
+    CGraph graph1;
+    int number;
+
+    if(graph1.Create(path)!=RETURN_SUCCESS)
+        printf("Test Failed!\n");
+
+    //graph1.PrintOut();
+    //number=graph1.CountNo();
+    graph1.WeightShortestPathBellmanFord(1);
+}
+
+void CGraph_WeightedTestFW(char* path)
+{
+    CGraph graph1;
+    int number;
+
+    if(graph1.Create(path)!=RETURN_SUCCESS)
+        printf("Test Failed!\n");
+
+    //graph1.PrintOut();
+    //number=graph1.CountNo();
+    graph1.WeightShortestPathFloydWarshall();
+}
+
+
 void CGraph_NeWeightedTest(char* path)
 {
     CGraph graph1;

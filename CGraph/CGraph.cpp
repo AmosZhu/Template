@@ -22,6 +22,9 @@ static cmp_t BinCmpFunc(hNode_t* arg1,hNode_t* arg2)
     if((arg1==NULL)||(arg2==NULL))
         return INVALID;
 
+    if((arg1->v==-1||arg1->u==-1)||(arg2->v==-1||arg2->u==-1))
+        return INVALID;
+
     if(arg1->weight==arg2->weight)
         return EQUAL;
     else if(arg1->weight>arg2->weight)
@@ -67,7 +70,7 @@ static void SCopyFunc(AM_U32* dst,AM_U32* src)
 
 CGraph::CGraph(void)
 {
-    m_node=NULL;
+    m_node=nullptr;
     m_vexno=0;
 
 }
@@ -87,12 +90,14 @@ CGraph::CGraph(const CGraph& object)
             memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
             m_node[i].indegree=object.m_node[i].indegree;
             m_node[i].index=object.m_node[i].index;
-            m_node[i].adjacent_node=object.m_node[i].adjacent_node;
+            m_node[i].adjacent_nodeOut=object.m_node[i].adjacent_nodeOut;
+            m_node[i].adjacent_nodeIn=object.m_node[i].adjacent_nodeIn;
+
         }
     }
     else
     {
-        m_node=NULL;
+        m_node=nullptr;
         m_vexno=0;
     }
     return;
@@ -111,11 +116,13 @@ void CGraph::Destroy(void)
     AM_U32 index;
     for(index=0; index<this->m_vexno; index++)
     {
-        this->m_node[index].adjacent_node.Destroy();
+        this->m_node[index].adjacent_nodeOut.Destroy();
     }
 
     delete[] m_node;
     m_node=nullptr;
+
+
 
 #if 0
     if(m_binHeap!=nullptr)
@@ -134,7 +141,7 @@ Err_t CGraph::Create(char* path)
         return INVALIDE_PARAMET;
     FILE* fp;
     AM_U32 index=0;
-    AM_U32 input=0;
+    AM_S32 input=0;
     char buf[MAXLINE];
     char* ret;
     AM_U32 type;
@@ -185,7 +192,7 @@ Err_t CGraph::Create(char* path)
     {
         //fscanf(fp,"%s",m_node[index].name);
         fscanf(fp,"%d",&m_node[index].index);
-        while(fscanf(fp,"%d",&input)&&input!=-1)
+        while(fscanf(fp,"%d",&input)&&input!=INFINITY)
         {
             m_node[input].indegree++;                   //caculate indegree
             temp.index=input;
@@ -198,23 +205,27 @@ Err_t CGraph::Create(char* path)
                 break;
                 case WEIGHTED:
                 {
-                    if(fscanf(fp,"%d",&input)&&input!=-1)
+                    if(fscanf(fp,"%d",&input)&&input!=INFINITY)
                     {
                         temp.weight=input;
                     }
                 }
             }
-            m_node[index].adjacent_node.Insert(&temp);
+            m_node[index].adjacent_nodeOut.Insert(&temp);
             noOfeges++;
         }
     }
 
     m_binHeap.Create(noOfeges);
+    m_binHeap.Initialize();
     for(index=0; index<m_vexno; index++)
     {
-        m_node[index].adjacent_node.ResetElemNext();
-        while(m_node[index].adjacent_node.GetElemNext(&v)==RETURN_SUCCESS)
+        m_node[index].adjacent_nodeOut.ResetElemNext();
+        while(m_node[index].adjacent_nodeOut.GetElemNext(&v)==RETURN_SUCCESS)
         {
+            temp.index=index;
+            temp.weight=v.weight;
+            m_node[v.index].adjacent_nodeIn.Insert(&temp);
             hNode.u=index;
             hNode.v=v.index;
             hNode.weight=v.weight;
@@ -259,8 +270,8 @@ Err_t CGraph::TopologicalSort(gnode_t * result)
     {
         q1.Dequeue(&result[i].index); //It will cause double free,because CList in the struct
         memcpy(&result[i],&this->m_node[result[i].index],sizeof(gnode_t));
-        dup1.m_node[result[i].index].adjacent_node.ResetElemNext(); //Reset pointer before get next element
-        while(dup1.m_node[result[i].index].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        dup1.m_node[result[i].index].adjacent_nodeOut.ResetElemNext(); //Reset pointer before get next element
+        while(dup1.m_node[result[i].index].adjacent_nodeOut.GetElemNext(&w)==RETURN_SUCCESS)
         {
             dup1.m_node[w.index].indegree--;
             if(dup1.m_node[w.index].indegree==0)
@@ -345,8 +356,8 @@ Err_t CGraph::UnWeightShortestPath(AM_U32 start,gtable_t* table)
         if(table[v].distance!=currDist)
             currDist++;
         table[v].know=TRUE;
-        m_node[v].adjacent_node.ResetElemNext();
-        while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        m_node[v].adjacent_nodeOut.ResetElemNext();
+        while(m_node[v].adjacent_nodeOut.GetElemNext(&w)==RETURN_SUCCESS)
         {
             if(table[w.index].distance==INFINITY)
             {
@@ -393,8 +404,8 @@ Err_t CGraph::WeightShortestPath(AM_U32 start,gtable_t* table)
         }
 
         table[v].know=TRUE;
-        m_node[v].adjacent_node.ResetElemNext();
-        while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        m_node[v].adjacent_nodeOut.ResetElemNext();
+        while(m_node[v].adjacent_nodeOut.GetElemNext(&w)==RETURN_SUCCESS)
         {
             if(table[w.index].know!=TRUE)
             {
@@ -406,6 +417,324 @@ Err_t CGraph::WeightShortestPath(AM_U32 start,gtable_t* table)
             }
         }
     }
+}
+
+Err_t CGraph::WeightShortestPathDP(AM_U32 start)
+{
+    AM_S32 scoreMatrix[m_vexno][m_vexno];
+    AM_S32 i,j;
+    AM_S32 currDist=INFINITY;
+    AM_S32 dist;
+    AM_U32 v;
+    gvertex_t w;
+
+    for(j=0; j<m_vexno; j++)
+    {
+        for(i=0; i<m_vexno; i++)
+        {
+            if(i==start)
+            {
+                scoreMatrix[i][j]=0;
+            }
+            else if(j==0)
+            {
+                scoreMatrix[i][j]=INFINITY;
+            }
+            else
+            {
+                currDist=scoreMatrix[i][j-1];
+                v=i;
+                m_node[v].adjacent_nodeIn.ResetElemNext();
+                while(m_node[v].adjacent_nodeIn.GetElemNext(&w)==RETURN_SUCCESS)
+                {
+                    if(scoreMatrix[w.index][j-1]==INFINITY)
+                    {
+                        dist=INFINITY;
+                    }
+                    else
+                    {
+                        dist=w.weight+scoreMatrix[w.index][j-1];
+                    }
+
+                    if(dist<currDist)
+                    {
+                        currDist=w.weight+scoreMatrix[w.index][j-1];
+                    }
+                }
+                scoreMatrix[i][j]=currDist;
+            }
+        }
+    }
+
+
+    for(i=0; i<m_vexno; i++)
+    {
+        std::cout<<i<<":  ";
+        for(j=0; j<m_vexno; j++)
+        {
+            if(scoreMatrix[i][j]==INFINITY)
+            {
+                std::cout<<std::setw(5)<<"@";
+            }
+            else
+            {
+                std::cout<<std::setw(5)<<scoreMatrix[i][j];
+            }
+        }
+        std::cout<<std::endl;
+    }
+
+    return RETURN_SUCCESS;
+}
+
+Err_t CGraph::WeightShortestPathBellmanFord(AM_U32 start)
+{
+    AM_S32 score[m_vexno];
+    AM_S32 i,j;
+    AM_S32 currDist=INFINITY;
+    AM_U32 u;
+    gvertex_t v;
+
+
+    score[start]=0;
+
+    for(i=0; i<m_vexno; i++)
+    {
+        for(j=0; j<m_vexno; j++)
+        {
+            if(i==0&&j!=start)
+            {
+                score[j]=INFINITY;
+            }
+            else
+            {
+                u=j;
+                m_node[u].adjacent_nodeOut.ResetElemNext();
+                while(m_node[u].adjacent_nodeOut.GetElemNext(&v)==RETURN_SUCCESS)
+                {
+                    if(score[v.index]==INFINITY)
+                    {
+                        if(u==start)
+                        {
+                            score[v.index]=v.weight;
+                        }
+                        else
+                        {
+                            if(score[u]==INFINITY)
+                            {
+                            }
+                            else
+                            {
+                                score[v.index]=v.weight+score[u];
+                            }
+                        }
+                        continue;
+                    }
+
+                    if(score[u]==INFINITY)
+                    {
+                        currDist=INFINITY;
+                    }
+                    else
+                    {
+                        currDist=score[u]+v.weight;
+                    }
+
+                    if(currDist<score[v.index])
+                    {
+                        score[v.index]=currDist;
+                    }
+                }
+            }
+        }
+
+        std::cout<<i<<":  ";
+        for(j=0; j<m_vexno; j++)
+        {
+            if(score[j]==INFINITY)
+            {
+                std::cout<<std::setw(5)<<"@";
+            }
+            else
+            {
+                std::cout<<std::setw(5)<<score[j];
+            }
+        }
+        std::cout<<std::endl;
+
+    }
+
+
+    return RETURN_SUCCESS;
+}
+
+Err_t CGraph::WeightShortestPathFloydWarshall(void)
+{
+    AM_S32 scoreMatrix[m_vexno][m_vexno];
+    AM_S32 oldScoreMatrix[m_vexno][m_vexno];
+    AM_S32 predecessor[m_vexno][m_vexno];
+    AM_S32 oldPredecessor[m_vexno][m_vexno];
+
+    AM_S32 currDist;
+
+    AM_U32 i,j,k;
+    gvertex_t v;
+    AM_U32 u;
+    AM_S32 p;
+
+    for(i=0; i<m_vexno; i++)
+    {
+        /*
+        *   Or use memset
+        */
+        for(j=0; j<m_vexno; j++)
+        {
+            if(i==j)
+            {
+                oldScoreMatrix[i][j]=0;
+                oldPredecessor[i][j]=-1;
+            }
+            else
+            {
+                oldScoreMatrix[i][j]=INFINITY;
+                oldPredecessor[i][j]=-1;
+            }
+        }
+        u=i;
+        m_node[u].adjacent_nodeOut.ResetElemNext();
+
+        while(m_node[u].adjacent_nodeOut.GetElemNext(&v)==RETURN_SUCCESS)
+        {
+            oldScoreMatrix[u][v.index]=v.weight;
+            oldPredecessor[u][v.index]=u;
+        }
+    }
+
+    /*
+    *   Print Initialize Info
+    */
+
+    for(i=0; i<m_vexno; i++)
+    {
+        for(j=0; j<m_vexno; j++)
+        {
+            if(oldScoreMatrix[i][j]==INFINITY)
+            {
+                std::cout<<std::setw(5)<<"@";
+            }
+            else
+            {
+                std::cout<<std::setw(5)<<oldScoreMatrix[i][j];
+            }
+        }
+        std::cout<<std::endl;
+    }
+
+    std::cout<<"Predecessor:"<<std::endl;
+    for(i=0; i<m_vexno; i++)
+    {
+        for(j=0; j<m_vexno; j++)
+        {
+            if(oldPredecessor[i][j]==-1)
+            {
+                std::cout<<std::setw(5)<<"/";
+            }
+            else
+            {
+                std::cout<<std::setw(5)<<oldPredecessor[i][j];
+            }
+
+        }
+        std::cout<<std::endl;
+    }
+
+
+    for(k=0; k<m_vexno; k++)
+    {
+        for(i=0; i<m_vexno; i++)
+        {
+            for(j=0; j<m_vexno; j++)
+            {
+                if(i==j)
+                {
+                    scoreMatrix[i][j]=0;
+                    predecessor[i][j]=-1;
+                    continue;
+                }
+
+                if(oldScoreMatrix[i][k]==INFINITY||oldScoreMatrix[k][j]==INFINITY)
+                {
+                    currDist=INFINITY;
+                    p=-1;
+                }
+                else
+                {
+                    currDist=oldScoreMatrix[i][k]+oldScoreMatrix[k][j];
+                    p=oldPredecessor[k][j];
+                }
+
+                if(oldScoreMatrix[i][j]<=currDist)
+                {
+                    currDist=oldScoreMatrix[i][j];
+                    p=oldPredecessor[i][j];
+                }
+
+                scoreMatrix[i][j]=currDist;
+                predecessor[i][j]=p;
+            }
+        }
+
+        std::cout<<"=============Round"<<k+1<<"================="<<std::endl;
+        std::cout<<"score:"<<std::endl;
+        for(i=0; i<m_vexno; i++)
+        {
+            for(j=0; j<m_vexno; j++)
+            {
+                if(scoreMatrix[i][j]==INFINITY)
+                {
+                    std::cout<<std::setw(5)<<"@";
+                }
+                else
+                {
+                    std::cout<<std::setw(5)<<scoreMatrix[i][j];
+
+                }
+            }
+            std::cout<<std::endl;
+        }
+
+        std::cout<<"Predecessor:"<<std::endl;
+        for(i=0; i<m_vexno; i++)
+        {
+            for(j=0; j<m_vexno; j++)
+            {
+                if(predecessor[i][j]==-1)
+                {
+                    std::cout<<std::setw(5)<<"/";
+                }
+                else
+                {
+                    std::cout<<std::setw(5)<<predecessor[i][j];
+                }
+
+            }
+            std::cout<<std::endl;
+        }
+
+
+        /*
+        *   Copy to old
+        */
+
+        for(i=0; i<m_vexno; i++)
+        {
+            memcpy(oldScoreMatrix[i],scoreMatrix[i],sizeof(AM_S32)*m_vexno);
+            memcpy(oldPredecessor[i],predecessor[i],sizeof(AM_S32)*m_vexno);
+        }
+
+    }
+
+    return RETURN_SUCCESS;
 }
 
 
@@ -429,9 +758,9 @@ Err_t CGraph::NegativeWeightShortestPath(AM_U32 start,gtable_t* table)
         q1.Dequeue(&v);
         table[v].know=FALSE; //If out the queue, reset the know flag;
         currDist=table[v].distance;
-        m_node[v].adjacent_node.ResetElemNext();
+        m_node[v].adjacent_nodeOut.ResetElemNext();
 
-        while(m_node[v].adjacent_node.GetElemNext(&w)==RETURN_SUCCESS)
+        while(m_node[v].adjacent_nodeOut.GetElemNext(&w)==RETURN_SUCCESS)
         {
             if(table[w.index].distance>currDist+w.weight)
             {
@@ -588,13 +917,22 @@ void CGraph::PrintOut(void)
     gvertex_t v;
     for(; index<this->m_vexno; index++)
     {
-        m_node[index].adjacent_node.ResetElemNext();
-        std::cout<<"Node "<<m_node[index].index<<": ";
-        while(m_node[index].adjacent_node.GetElemNext(&v)==RETURN_SUCCESS)
+        m_node[index].adjacent_nodeOut.ResetElemNext();
+        std::cout<<"Node "<<m_node[index].index<<" out: ";
+        while(m_node[index].adjacent_nodeOut.GetElemNext(&v)==RETURN_SUCCESS)
         {
             std::cout<<v.index<<":"<<v.weight<<"  ";
         }
         std::cout<<std::endl;
+
+        m_node[index].adjacent_nodeIn.ResetElemNext();
+        std::cout<<"Node "<<m_node[index].index<<" In: ";
+        while(m_node[index].adjacent_nodeIn.GetElemNext(&v)==RETURN_SUCCESS)
+        {
+            std::cout<<v.index<<":"<<v.weight<<"  ";
+        }
+        std::cout<<std::endl;
+
         std::cout<<"In Degree: "<<this->m_node[index].indegree<<std::endl;
         std::cout<<"Out Degree: ";
         std::cout<<std::endl<<std::endl;
@@ -639,7 +977,7 @@ CGraph& CGraph::operator=(const CGraph& object)
             memcpy(m_node[i].name,object.m_node[i].name,NAMESIZE);
             m_node[i].indegree=object.m_node[i].indegree;
             m_node[i].index=object.m_node[i].index;
-            m_node[i].adjacent_node=object.m_node[i].adjacent_node;
+            m_node[i].adjacent_nodeOut=object.m_node[i].adjacent_nodeOut;
         }
     }
     else

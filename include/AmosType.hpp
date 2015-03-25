@@ -12,7 +12,7 @@
 #undef INFINITY
 #endif
 
-#define INFINITY (0x7FFFFFFF)
+#define INFINITY (2147483647)
 
 
 #define MAXLINE 1024
@@ -42,7 +42,7 @@ typedef enum COMPARE_ENUM
     LARGER,
     SMALLER,
     INVALID,
-}cmp_t;
+} cmp_t;
 
 
 

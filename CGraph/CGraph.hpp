@@ -34,7 +34,8 @@ typedef struct GRAPH_NODE_TYPE
     AM_U8 name[NAMESIZE];
     AM_U32 index;
     AM_U32 indegree;
-    CList<gvertex_t> adjacent_node;
+    CList<gvertex_t> adjacent_nodeOut;
+    CList<gvertex_t> adjacent_nodeIn;
 } gnode_t;
 
 typedef struct GRAPH_TABLE_TYPE
@@ -89,6 +90,9 @@ public:
     ******************************************************/
     Err_t UnWeightShortestPath(AM_U32 start,gtable_t* table);
     Err_t WeightShortestPath(AM_U32 start,gtable_t* table);
+    Err_t WeightShortestPathDP(AM_U32 start);
+    Err_t WeightShortestPathBellmanFord(AM_U32 start);
+    Err_t WeightShortestPathFloydWarshall(void);
     Err_t NegativeWeightShortestPath(AM_U32 start,gtable_t* table);
     Err_t MinSpanTree(gtable_t* table);
     void PrintShortestPath(gtable_t* table,AM_U32 size);
