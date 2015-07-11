@@ -3,5 +3,5 @@
 int main(void)
 {
     CDisjointSet_BasicUT();
-    //CDisjointSet_StringUT();
+    CDisjointSet_StringUT();
 }
