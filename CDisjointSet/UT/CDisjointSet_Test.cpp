@@ -3,6 +3,7 @@
 #include "CDisjointSet_Test.hpp"
 #include <string.h>
 #include <string>
+#include <iostream>
 
 AM_U32 data[] = {1,2,3,4,5,6};
 AM_U32 pairData[5][2]= {{1,2},{1,5},{3,4},{5,2},{1,3}};
@@ -42,6 +43,9 @@ void CDisjointSet_BasicUT(void)
             printf("False\n");
         }
     }
+
+    std::cout<<"The size of set: "<<set1.Size()<<std::endl;
+    std::cout<<"The number of different sets: "<<set1.Count()<<std::endl;
 }
 
 void CDisjointSet_StringUT(void)
@@ -73,4 +77,8 @@ void CDisjointSet_StringUT(void)
             printf("False\n");
         }
     }
+
+    std::cout<<"The size of set: "<<set1.Size()<<std::endl;
+    std::cout<<"The number of different sets: "<<set1.Count()<<std::endl;
+
 }

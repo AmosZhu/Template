@@ -33,7 +33,15 @@ public:
     void Initialize(void);
     bool Add(type& elem);
 
-    int Count(void) const;
+    int Size(void) const;
+
+
+    /************************************************************
+    *
+    *   @ The number of different set
+    *
+    ************************************************************/
+    int Count(void);
 
     type Find(type& elem);
     type Union(type& e1,type& e2);
@@ -50,6 +58,7 @@ protected:
     std::vector<int> m_disjSet; //Store the root, default -1;
     std::map<type,int> m_type2idx;  //Type to Index
     std::map<int,type> m_idx2type;  //Index to Type
+    int m_size=0;
     int m_count=0;
 };
 
@@ -73,9 +82,10 @@ CDisjointSet<type>::CDisjointSet(type* elemArray,int len)
 
     for(idx=0; idx<len; idx++)
     {
-        m_type2idx.insert(std::pair<type,int>(elemArray[idx],m_count));
-        m_idx2type.insert(std::pair<int,type>(m_count,elemArray[idx]));
+        m_type2idx.insert(std::pair<type,int>(elemArray[idx],m_size));
+        m_idx2type.insert(std::pair<int,type>(m_size,elemArray[idx]));
         m_disjSet.push_back(-1);
+        m_size++;
         m_count++;
     }
 }
@@ -86,6 +96,7 @@ CDisjointSet<type>::~CDisjointSet(void)
     m_disjSet.clear();
     m_type2idx.clear();
     m_idx2type.clear();
+    m_size=0;
     m_count=0;
 }
 
@@ -108,14 +119,22 @@ bool CDisjointSet<type>::Add(type& elem)
     }
 
     m_disjSet.push_back(-1);
-    m_type2idx.insert(std::pair<type,int>(elem,m_count));
-    m_idx2type.insert(std::pair<int,type>(m_count,elem));
+    m_type2idx.insert(std::pair<type,int>(elem,m_size));
+    m_idx2type.insert(std::pair<int,type>(m_size,elem));
+    m_size++;
     m_count++;
     return true;
 }
 
 template<class type>
-int CDisjointSet<type>::Count(void) const
+int CDisjointSet<type>::Size(void) const
+{
+    return m_size;
+}
+
+
+template<class type>
+int CDisjointSet<type>::Count(void)
 {
     return m_count;
 }
@@ -179,6 +198,7 @@ type CDisjointSet<type>::Union(type& e1,type& e2)
     {
         idx=setUnion(root1,root2);
         result=m_idx2type[idx];
+        m_count--;
     }
     return result;
 }
